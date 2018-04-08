@@ -6,7 +6,7 @@ import lstm
 
 def main():
 	run_id = np.random.randint(1000)
-	data = open('input.txt','r').read()
+	data = open('input.txt','r',encoding='utf-8').read()
 
 	chars = list(set(data))
 	data_size,vocab_size = len(data),len(chars)

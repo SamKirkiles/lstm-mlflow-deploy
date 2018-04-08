@@ -77,8 +77,6 @@ class LSTM:
 				predictions,loss = sess.run([optimize,h],feed_dict={one_hot_p:one_hot,one_hot_targets_p:one_hot_targets})
 				
 
-				print(loss)
-
 				if j%1000 == 0:
 					self.predict(sess)
 
@@ -129,7 +127,7 @@ class LSTM:
 
 		out = ""
 
-		for i in range(25):
+		for i in range(50):
 			(x,h,c) = self.lstm_cell((one_hot,h,c),(one_hot,h,c))
 			h_softmax = tf.nn.softmax(h)
 

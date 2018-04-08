@@ -79,7 +79,7 @@ class LSTM:
 
 				print(loss)
 
-				if j%100 == 0:
+				if j%1000 == 0:
 					self.predict(sess)
 
 				i += seq_length

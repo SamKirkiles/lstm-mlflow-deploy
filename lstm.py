@@ -5,7 +5,7 @@ class LSTM:
 
 	vocab_size = None
 	data_size = None
-	hidden_size = 512
+	hidden_size = 1024 * 2
 
 	char_to_ix = {}
 	ix_to_char = {}
@@ -35,49 +35,51 @@ class LSTM:
 		self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
 
 		# Define graph (This is one lstm cell but we want multiple cells)
+		with tf.device("/gpu:1")
 
-		with tf.name_scope("hidden_states"):
+			with tf.name_scope("hidden_states"):
 
-			h_prev_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="h_prev")
-			c_prev_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="c_prev")
-			hidden_states = tf.stack([h_prev_placeholder,c_prev_placeholder])
+				h_prev_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="h_prev")
+				c_prev_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="c_prev")
+				hidden_states = tf.stack([h_prev_placeholder,c_prev_placeholder])
 
-		inputs_placeholder = tf.placeholder(shape=[seq_length,self.vocab_size],dtype=tf.float32,name="batch")
-		labels_placeholder = tf.placeholder(shape=[seq_length,self.vocab_size],dtype=tf.float32,name="batch")
+			inputs_placeholder = tf.placeholder(shape=[seq_length,self.vocab_size],dtype=tf.float32,name="batch")
+			labels_placeholder = tf.placeholder(shape=[seq_length,self.vocab_size],dtype=tf.float32,name="batch")
 
-		# this will be [25,2,vocab_size]
-		batch = tf.scan(self.lstm_cell,inputs_placeholder,initializer=hidden_states)
-		h_outputs,c_outputs = tf.unstack(batch,axis=1)
+			# this will be [25,2,vocab_size]
+			batch = tf.scan(self.lstm_cell,inputs_placeholder,initializer=hidden_states)
+			h_outputs,c_outputs = tf.unstack(batch,axis=1)
 
 
-		Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32)
+			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32)
 
-		h_outputs = tf.squeeze(h_outputs,axis=2)
+			h_outputs = tf.squeeze(h_outputs,axis=2)
 
-		h_new = tf.transpose(tf.matmul(Wout, tf.transpose(h_outputs)))
+			h_new = tf.transpose(tf.matmul(Wout, tf.transpose(h_outputs)))
 
-		softmax = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels_placeholder,logits=h_new)
-		
-		loss = tf.reduce_mean(softmax)
-		optimize = tf.train.AdagradOptimizer(0.1).minimize(loss)
+			softmax = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels_placeholder,logits=h_new)
+			
+			loss = tf.reduce_mean(softmax)
+			optimize = tf.train.AdagradOptimizer(0.1).minimize(loss)
 
-		hidden_state = tf.unstack(batch,axis=1)
-		# now compute loss and what not
+			hidden_state = tf.unstack(batch,axis=1)
+			# now compute loss and what not
 
 
 		with tf.name_scope("predict_hidden"):
+			with tf.device("/gpu:1")
 
-			h_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="h_predict")
-			c_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="c_predict")
-			hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
+				h_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="h_predict")
+				c_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="c_predict")
+				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
 
-			x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
+				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 
-			state = self.lstm_cell(hidden_states_pred,x_predict_placeholder)
-			state_unstack = tf.unstack(state)
-			h,c = tf.unstack(state)
-			h_pred_out = tf.matmul(Wout, h)	
-			h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
+				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder)
+				state_unstack = tf.unstack(state)
+				h,c = tf.unstack(state)
+				h_pred_out = tf.matmul(Wout, h)	
+				h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
 
 		with tf.Session() as sess:
 
@@ -90,11 +92,15 @@ class LSTM:
 			# initialize all veraibles
 			sess.run(tf.global_variables_initializer())
 
+			self.h_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
+			self.c_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
+			loss_output = 0
 
 			while True:
 
 				if i + seq_length + 1 >= len(data) or j == 0:
-					seq_prev = np.zeros((self.vocab_size,1))
+					self.h_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
+					self.c_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
 					i = 0
 
 
@@ -126,9 +132,8 @@ class LSTM:
 
 						out += self.ix_to_char[one_hot_n]
 
-					print("########")
+					print("####### Loss: " + str(loss_output) + " ########")
 					print(out)
-					print("########")
 
 				inputs = np.array([self.char_to_ix[ch] for ch in data[i:i+seq_length]])
 				targets = np.array([self.char_to_ix[ch] for ch in data[i+1:i+seq_length+1]])
@@ -139,10 +144,6 @@ class LSTM:
 				targets_one_hot = np.zeros((targets.shape[0],self.vocab_size),dtype=np.float32)
 				targets_one_hot[np.arange(targets.shape[0]),targets] = 1
 
-				self.h_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
-				self.c_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
-
-
 				feed = {inputs_placeholder:inputs_one_hot, 
 						labels_placeholder:targets_one_hot, 
 						h_prev_placeholder:self.h_state_prev, 
@@ -152,7 +153,6 @@ class LSTM:
 
 				_,loss_output = sess.run([optimize, loss],feed_dict=feed)
 				h_steps,c_steps= sess.run(hidden_state,feed_dict=feed)
-
 
 				# set new hidden states
 				self.h_state_prev = h_steps[-1]

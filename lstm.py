@@ -63,10 +63,10 @@ class LSTM:
 				softmax = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels_placeholder,logits=h_new)
 				
 				loss = tf.reduce_mean(softmax)
-				optimize = tf.train.AdagradOptimizer(0.1).minimize(loss)
+		optimize = tf.train.AdagradOptimizer(0.1).minimize(loss)
 
-				hidden_state = tf.unstack(batch,axis=1)
-				# now compute loss and what not
+		hidden_state = tf.unstack(batch,axis=1)
+		# now compute loss and what not
 
 
 		with tf.name_scope("predict_hidden"):

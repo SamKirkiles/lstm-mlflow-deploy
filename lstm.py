@@ -5,7 +5,7 @@ class LSTM:
 
 	vocab_size = None
 	data_size = None
-	hidden_size = 1024 * 2
+	hidden_size = 1024 * 4
 
 	char_to_ix = {}
 	ix_to_char = {}
@@ -67,7 +67,7 @@ class LSTM:
 
 
 		with tf.name_scope("predict_hidden"):
-			with tf.device("/cpu:0"):
+			with tf.device("/cpu:0"):	
 
 				h_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="h_predict")
 				c_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="c_predict")
@@ -104,7 +104,7 @@ class LSTM:
 					i = 0
 
 
-				if j%100 == 0:
+				if j%1000 == 0:
 					self.h_predict_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
 					self.c_predict_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
 

@@ -35,7 +35,7 @@ class LSTM:
 		self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
 
 		# Define graph (This is one lstm cell but we want multiple cells)
-		with tf.device("/gpu:0")
+		with tf.device("/gpu:0"):
 
 			with tf.name_scope("hidden_states"):
 
@@ -67,7 +67,7 @@ class LSTM:
 
 
 		with tf.name_scope("predict_hidden"):
-			with tf.device("/gpu:0")
+			with tf.device("/cpu:0"):
 
 				h_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="h_predict")
 				c_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="c_predict")

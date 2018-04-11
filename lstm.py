@@ -5,7 +5,7 @@ class LSTM:
 
 	vocab_size = None
 	data_size = None
-	hidden_size = 1024 * 4
+	hidden_size = 1024 * 2
 
 	char_to_ix = {}
 	ix_to_char = {}

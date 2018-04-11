@@ -52,7 +52,7 @@ class LSTM:
 				batch = tf.scan(self.lstm_cell,inputs_placeholder,initializer=hidden_states)
 				h_outputs,c_outputs = tf.unstack(batch,axis=1)
 
-				with tf.name_scope("Wout",reuse=tf.AUTO_REUSE):
+				with tf.variable_scope("Wout",reuse=tf.AUTO_REUSE):
 
 					Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32)
 

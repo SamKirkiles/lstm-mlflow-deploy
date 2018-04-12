@@ -70,7 +70,7 @@ class LSTM:
 			# now compute loss and what not
 
 		with tf.name_scope("predict_hidden"):
-			with tf.device("/gpu:0"):	
+			with tf.device("/gpu:1"):	
 
 				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
 				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")

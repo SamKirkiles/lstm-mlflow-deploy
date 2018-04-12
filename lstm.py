@@ -55,7 +55,7 @@ class LSTM:
 			h_outputs = h_outputs[:,-1,:,:]
 			c_outputs = c_outputs[:,-1,:,:]
 
-			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,,initializer=tf.random_uniform_initializer(minvalue=-0.08,maxvalue=0.08))
+			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minvalue=-0.08,maxvalue=0.08))
 
 			h_outputs = tf.squeeze(h_outputs,axis=2)
 

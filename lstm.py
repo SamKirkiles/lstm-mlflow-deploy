@@ -5,7 +5,8 @@ class LSTM:
 
 	vocab_size = None
 	data_size = None
-	hidden_size = 1024 * 2
+	num_layers = 3
+	hidden_size = 512
 
 	char_to_ix = {}
 	ix_to_char = {}
@@ -34,13 +35,14 @@ class LSTM:
 		self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
 		self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
 
-		# Define graph (This is one lstm cell but we want multiple cells)
+		# Define graph (This is one lstm cell but we want multiple cells)	
+
 		with tf.device("/gpu:0"):
 
 			with tf.name_scope("hidden_states"):
 
-				h_prev_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="h_prev")
-				c_prev_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="c_prev")
+				h_prev_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="h_prev")
+				c_prev_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="c_prev")
 				hidden_states = tf.stack([h_prev_placeholder,c_prev_placeholder])
 
 			inputs_placeholder = tf.placeholder(shape=[seq_length,self.vocab_size],dtype=tf.float32,name="batch")
@@ -50,6 +52,8 @@ class LSTM:
 			batch = tf.scan(self.lstm_cell,inputs_placeholder,initializer=hidden_states)
 			h_outputs,c_outputs = tf.unstack(batch,axis=1)
 
+			h_outputs = h_outputs[:,-1,:,:]
+			c_outputs = c_outputs[:,-1,:,:]
 
 			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32)
 
@@ -65,21 +69,25 @@ class LSTM:
 			hidden_state = tf.unstack(batch,axis=1)
 			# now compute loss and what not
 
-
 		with tf.name_scope("predict_hidden"):
-			with tf.device("/cpu:0"):	
+			with tf.device("/gpu:0"):	
 
-				h_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="h_predict")
-				c_predict_placeholder = tf.placeholder(shape=[self.hidden_size,1],dtype=tf.float32,name="c_predict")
+				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
+				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
 				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
 
 				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 
 				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder)
+
 				state_unstack = tf.unstack(state)
 				h,c = tf.unstack(state)
+				h = h[-1]
+				c = c[-1]
+
 				h_pred_out = tf.matmul(Wout, h)	
 				h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
+
 
 		with tf.Session() as sess:
 
@@ -92,21 +100,21 @@ class LSTM:
 			# initialize all veraibles
 			sess.run(tf.global_variables_initializer())
 
-			self.h_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
-			self.c_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
+			self.h_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
+			self.c_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
 			loss_output = 0
 
 			while True:
 
 				if i + seq_length + 1 >= len(data) or j == 0:
-					self.h_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
-					self.c_state_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
+					self.h_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
+					self.c_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
 					i = 0
 
 
 				if j%1000 == 0:
-					self.h_predict_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
-					self.c_predict_prev = np.zeros(shape=(self.hidden_size,1),dtype=np.float32)
+					self.h_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
+					self.c_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
 
 					one_hot_init = np.zeros((self.vocab_size,1),dtype=np.float32)
 					one_hot_init[self.char_to_ix['a']] = 1
@@ -158,57 +166,75 @@ class LSTM:
 				self.h_state_prev = h_steps[-1]
 				self.c_state_prev = c_steps[-1]
 
-
 				i += seq_length
 				j += 1
+				print(j, end="\r", flush=True)
+
 
 			train_writer.close()
 
 
 	def lstm_cell(self,state,x):
 
-
+		# This cell takes in previous hidden states of size (2,num_layers,vocab_size,1) and input of size (vocab_size)
 		with tf.variable_scope("weights",reuse=tf.AUTO_REUSE):
+			W_input = tf.get_variable(name="W_input",shape=[4, self.hidden_size, self.vocab_size])
+			U_input = tf.get_variable(name = "U_input",shape=[4, self.hidden_size, self.hidden_size])
+			b_input = tf.get_variable(name="b_input", shape=[4, self.hidden_size,1], initializer=tf.zeros_initializer())
 
-			Wfx = tf.get_variable(name="Wfx",shape=[self.hidden_size,self.vocab_size])
-			Wfh = tf.get_variable(name = "Wfh",shape=[self.hidden_size,self.hidden_size])
-			bf = tf.get_variable(name="bf", shape=[self.hidden_size,1], initializer=tf.zeros_initializer())
-
-			Wix = tf.get_variable(name="Wix",shape=[self.hidden_size,self.vocab_size])
-			Wih = tf.get_variable(name = "Wih",shape=[self.hidden_size,self.hidden_size])
-			bi = tf.get_variable(name="bi", shape=[self.hidden_size,1], initializer=tf.zeros_initializer())
-
-			Wcx = tf.get_variable(name="Wcx",shape=[self.hidden_size,self.vocab_size])
-			Wch = tf.get_variable(name = "Wch",shape=[self.hidden_size,self.hidden_size])
-			bc = tf.get_variable(name="bc", shape=[self.vocab_size,1], initializer=tf.zeros_initializer())
-
-			Wox = tf.get_variable(name="Wox",shape=[self.hidden_size,self.vocab_size])
-			Woh = tf.get_variable(name = "Woh",shape=[self.hidden_size,self.hidden_size])
-			bo = tf.get_variable(name="bo", shape=[self.hidden_size,1], initializer=tf.zeros_initializer())
+			W = tf.get_variable(name="W",shape=[self.num_layers, 4, self.hidden_size, self.hidden_size])
+			U = tf.get_variable(name = "U",shape=[self.num_layers, 4, self.hidden_size, self.hidden_size])
+			b = tf.get_variable(name="b", shape=[self.num_layers, 4, self.hidden_size,1], initializer=tf.zeros_initializer())
 
 		with tf.name_scope("LSTM_cell"):
 
-			print(x)
 			x = tf.reshape(x,[self.vocab_size,1])
 			h_prev,c_prev = tf.unstack(state)
+			inp = x
 
-			with tf.name_scope("gates"):
+			h_full, c_full = [], []
+
+			# First cell
+			with tf.name_scope("input_gates"):
 				with tf.name_scope("ft"):
-					ft = tf.sigmoid(tf.matmul(Wfx,x) + tf.matmul(Wfh,h_prev) + bf)
+					ft = tf.sigmoid(tf.matmul(W_input[0],inp) + tf.matmul(U_input[0],h_prev[0]) + b_input[0])
 				with tf.name_scope("it"):
-					it = tf.sigmoid(tf.matmul(Wix,x) + tf.matmul(Wih,h_prev) + bi)
+					it = tf.sigmoid(tf.matmul(W_input[1],inp) + tf.matmul(U_input[1],h_prev[0]) + b_input[1])
 				with tf.name_scope("ot"):
-					ot = tf.sigmoid(tf.matmul(Wox,x) + tf.matmul(Woh,h_prev) + bi)
+					ot = tf.sigmoid(tf.matmul(W_input[2],inp) + tf.matmul(U_input[2],h_prev[0]) + b_input[2])
 				with tf.name_scope("ct"):
-					ct = tf.tanh(tf.matmul(Wcx,x) + tf.matmul(Wch,h_prev) + bo)
-		
+					ct = tf.tanh(tf.matmul(W_input[3],inp) + tf.matmul(U_input[3],h_prev[0]) + b_input[3])
+
 			with tf.name_scope("c"):
-				c = (ft * c_prev) + (it * ct)
+				c = (ft * c_prev[0]) + (it * ct)
 			with tf.name_scope("h"):
 				h = ot * tf.tanh(c)
 
-			return tf.stack([h,c])
+			inp = h
+			h_full.append(h)
+			c_full.append(c)
 
 
+			for i in range(1,self.num_layers):	
 
+				with tf.name_scope("gates"):
+					with tf.name_scope("ft"):
+						ft = tf.sigmoid(tf.matmul(W[i][0],inp) + tf.matmul(U[i][0],h_prev[i]) + b[i][0])
+					with tf.name_scope("it"):
+						it = tf.sigmoid(tf.matmul(W[i][1],inp) + tf.matmul(U[i][1],h_prev[i]) + b[i][1])
+					with tf.name_scope("ot"):
+						ot = tf.sigmoid(tf.matmul(W[i][2],inp) + tf.matmul(U[i][2],h_prev[i]) + b[i][2])
+					with tf.name_scope("ct"):
+						ct = tf.tanh(tf.matmul(W[i][3],inp) + tf.matmul(U[i][3],h_prev[i]) + b[i][3])
+
+				with tf.name_scope("c"):
+					c = (ft * c_prev[i]) + (it * ct)
+				with tf.name_scope("h"):
+					h = ot * tf.tanh(c)
+
+				inp = h
+				h_full.append(h)
+				c_full.append(c)
+
+			return tf.stack([h_full,c_full])
 

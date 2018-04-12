@@ -24,7 +24,7 @@ class LSTM:
 	def train(self,data):
 
 		run_id = np.random.randint(1000)
-		seq_length = 25
+		seq_length = 100
 
 		print("Training with run id: " + str(run_id))
 

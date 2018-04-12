@@ -55,7 +55,7 @@ class LSTM:
 			h_outputs = h_outputs[:,-1,:,:]
 			c_outputs = c_outputs[:,-1,:,:]
 
-			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minvalue=-0.08,maxvalue=0.08))
+			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
 
 			h_outputs = tf.squeeze(h_outputs,axis=2)
 
@@ -178,12 +178,12 @@ class LSTM:
 
 		# This cell takes in previous hidden states of size (2,num_layers,vocab_size,1) and input of size (vocab_size)
 		with tf.variable_scope("weights",reuse=tf.AUTO_REUSE):
-			W_input = tf.get_variable(name="W_input",shape=[4, self.hidden_size, self.vocab_size],initializer=tf.random_uniform_initializer(minvalue=-0.08,maxvalue=0.08))
-			U_input = tf.get_variable(name = "U_input",shape=[4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minvalue=-0.08,maxvalue=0.08))
+			W_input = tf.get_variable(name="W_input",shape=[4, self.hidden_size, self.vocab_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+			U_input = tf.get_variable(name = "U_input",shape=[4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
 			b_input = tf.get_variable(name="b_input", shape=[4, self.hidden_size,1], initializer=tf.zeros_initializer())
 
-			W = tf.get_variable(name="W",shape=[self.num_layers, 4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minvalue=-0.08,maxvalue=0.08))
-			U = tf.get_variable(name = "U",shape=[self.num_layers, 4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minvalue=-0.08,maxvalue=0.08))
+			W = tf.get_variable(name="W",shape=[self.num_layers, 4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+			U = tf.get_variable(name = "U",shape=[self.num_layers, 4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
 			b = tf.get_variable(name="b", shape=[self.num_layers, 4, self.hidden_size,1], initializer=tf.zeros_initializer())
 
 		with tf.name_scope("LSTM_cell"):

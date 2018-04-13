@@ -27,3 +27,5 @@ Here are some examples of text halucinations:
 >ther could in the duarks at on the colpres. Anla me all stining with the rustling of dresses and
 >the scraping of chairs. Then one of those conversations began which last
 >out until, at the first pause,
+
+![Training](https://i.imgur.com/2KG7cO5.png)

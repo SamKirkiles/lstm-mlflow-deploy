@@ -21,7 +21,7 @@ class LSTM:
 		pass
 
 
-	def train(self,data):
+	def train(self,data,gpu=False):
 
 		run_id = np.random.randint(1000)
 		seq_length = 50
@@ -37,7 +37,12 @@ class LSTM:
 
 		# Define graph (This is one lstm cell but we want multiple cells)	
 
-		with tf.device("/gpu:0"):
+		if gpu == True:
+			device = "/gpu:0"
+		else:
+			device = "/cpu:0"
+
+		with tf.device(device):
 
 			with tf.name_scope("hidden_states"):
 
@@ -69,8 +74,13 @@ class LSTM:
 			hidden_state = tf.unstack(batch,axis=1)
 			# now compute loss and what not
 
+		if gpu == True:
+			device = "/gpu:1"
+		else:
+			device = "/cpu:0"
+
 		with tf.name_scope("predict_hidden"):
-			with tf.device("/gpu:1"):	
+			with tf.device(device):	
 
 				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
 				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
@@ -215,7 +225,7 @@ class LSTM:
 
 
 			for i in range(1,self.num_layers):
-				
+
 				inp = tf.layers.dropout(h,rate=0.5,training=train)
 
 				with tf.name_scope("gates"):

@@ -210,14 +210,13 @@ class LSTM:
 			with tf.name_scope("h"):
 				h = ot * tf.tanh(c)
 
-
-
-			inp = tf.layers.dropout(h,rate=0.5,training=train)
-			h_full.append(inp)
+			h_full.append(h)
 			c_full.append(c)
 
 
-			for i in range(1,self.num_layers):	
+			for i in range(1,self.num_layers):
+				
+				inp = tf.layers.dropout(h,rate=0.5,training=train)
 
 				with tf.name_scope("gates"):
 					with tf.name_scope("ft"):
@@ -234,8 +233,7 @@ class LSTM:
 				with tf.name_scope("h"):
 					h = ot * tf.tanh(c)
 
-				inp = tf.layers.dropout(h,rate=0.5,training=train)
-				h_full.append(inp)
+				h_full.append(h)
 				c_full.append(c)
 
 			return tf.stack([h_full,c_full])

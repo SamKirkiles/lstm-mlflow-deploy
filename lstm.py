@@ -24,7 +24,7 @@ class LSTM:
 	def train(self,data):
 
 		run_id = np.random.randint(1000)
-		seq_length = 100
+		seq_length = 50
 
 		print("Training with run id: " + str(run_id))
 
@@ -78,7 +78,7 @@ class LSTM:
 
 				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 
-				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder)
+				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder,train=False)
 
 				state_unstack = tf.unstack(state)
 				h,c = tf.unstack(state)
@@ -174,7 +174,7 @@ class LSTM:
 			train_writer.close()
 
 
-	def lstm_cell(self,state,x):
+	def lstm_cell(self,state,x,train=True):
 
 		# This cell takes in previous hidden states of size (2,num_layers,vocab_size,1) and input of size (vocab_size)
 		with tf.variable_scope("weights",reuse=tf.AUTO_REUSE):
@@ -190,7 +190,7 @@ class LSTM:
 
 			x = tf.reshape(x,[self.vocab_size,1])
 			h_prev,c_prev = tf.unstack(state)
-			inp = x
+			inp = tf.layers.dropout(x,rate=0.5,training=train)
 
 			h_full, c_full = [], []
 
@@ -210,8 +210,10 @@ class LSTM:
 			with tf.name_scope("h"):
 				h = ot * tf.tanh(c)
 
-			inp = h
-			h_full.append(h)
+
+
+			inp = tf.layers.dropout(h,rate=0.5,training=train)
+			h_full.append(inp)
 			c_full.append(c)
 
 
@@ -232,8 +234,8 @@ class LSTM:
 				with tf.name_scope("h"):
 					h = ot * tf.tanh(c)
 
-				inp = h
-				h_full.append(h)
+				inp = tf.layers.dropout(h,rate=0.5,training=train)
+				h_full.append(inp)
 				c_full.append(c)
 
 			return tf.stack([h_full,c_full])

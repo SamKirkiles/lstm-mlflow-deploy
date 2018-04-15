@@ -226,8 +226,8 @@ class LSTM:
 					print("####### Loss: " + str(loss_output) + " ########")
 					print(out)
 
-					save_path = saver.save(sess, "./saves/model.ckpt")
-					print("Model saved in path: %s" % save_path)
+					#save_path = saver.save(sess, "./saves/model.ckpt")
+					#print("Model saved in path: %s" % save_path)
 
 
 				inputs = np.array([self.char_to_ix[ch] for ch in data[i:i+seq_length]])

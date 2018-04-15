@@ -62,7 +62,7 @@ class LSTM:
 
 		with tf.Session() as sess:
 			if restore:
-				
+				print(tf.train.latest_checkpoint('./saves'))
 				saver.restore(sess, tf.train.latest_checkpoint('./saves'))
 			else:
 				sess.run(tf.global_variables_initializer())

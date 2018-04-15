@@ -306,8 +306,8 @@ class LSTM:
 			for i in range(1,self.num_layers):
 
 				#inp = tf.layers.dropout(h,rate=0.5,training=train)
-				inp = x
-				
+				inp = h
+
 				with tf.name_scope("gates"):
 					with tf.name_scope("ft"):
 						ft = tf.sigmoid(tf.matmul(W[i][0],inp) + tf.matmul(U[i][0],h_prev[i]) + b[i][0])

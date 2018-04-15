@@ -235,7 +235,7 @@ class LSTM:
 					print(out)
 
 
-					save_path = saver.save(sess, "./saves/model.ckpt")
+					save_path = saver.save(sess, "./saves/model.ckpt",global_step=j)
 					print("Model saved in path: %s" % save_path)
 
 

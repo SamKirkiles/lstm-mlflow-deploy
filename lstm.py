@@ -116,9 +116,9 @@ class LSTM:
 
 		if restore:
 			with open('./saves/ix_to_char.pickle','rb') as f:
-			    self.ix_to_col = pickle.load(f)
+			    self.ix_to_char = pickle.load(f)
 			with open('./saves/char_to_ix.pickle','rb') as f:
-			    self.col_to_ix = pickle.load(f)
+			    self.char_to_ix = pickle.load(f)
 		else:
 			with open('./saves/ix_to_char.pickle', 'wb') as f:
 				self.ix_to_char = {i:ch for i,ch in enumerate(chars)}

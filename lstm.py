@@ -172,9 +172,9 @@ class LSTM:
 			with tf.device(device):	
 
 
-				h_prev_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="h_prev")
-				c_prev_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="c_prev")
-				hidden_states = tf.stack([h_prev_placeholder,c_prev_placeholder])
+				h_predict_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="h_prev")
+				c_predict_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="c_prev")
+				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
 
 				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 

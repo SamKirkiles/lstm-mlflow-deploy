@@ -177,7 +177,10 @@ class LSTM:
 			j = 0			
 
 			# initialize all veraibles
-			sess.run(tf.global_variables_initializer())
+			if restore:
+  				saver.restore(sess, "./saves/model.ckpt")
+			else:
+				sess.run(tf.global_variables_initializer())
 
 			self.h_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
 			self.c_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)

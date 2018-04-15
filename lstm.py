@@ -178,7 +178,7 @@ class LSTM:
 
 				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 
-				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder,train=False)
+				state = self.lstm_cell(hidden_states,x_predict_placeholder,train=False)
 
 				state_unstack = tf.unstack(state)
 				h,c = tf.unstack(state)

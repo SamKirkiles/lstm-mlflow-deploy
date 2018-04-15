@@ -163,8 +163,9 @@ class LSTM:
 
 			hidden_state = tf.unstack(batch,axis=1)
 
-			# Test Graph
-			pred_softmax,pred_hidden_state = self.test_graph(gpu)
+		# Test Graph
+		pred_softmax,pred_hidden_state = self.test_graph(gpu)
+
 		with tf.device("/cpu:0"):
 			saver = tf.train.Saver()
 
@@ -278,8 +279,7 @@ class LSTM:
 
 			x = tf.reshape(x,[self.vocab_size,1])
 			h_prev,c_prev = tf.unstack(state)
-			#inp = tf.layers.dropout(x,rate=0.5,training=train)
-			inp = x
+			inp = tf.layers.dropout(x,rate=0.5,training=train)
 
 			h_full, c_full = [], []
 
@@ -305,8 +305,7 @@ class LSTM:
 
 			for i in range(1,self.num_layers):
 
-				#inp = tf.layers.dropout(h,rate=0.5,training=train)
-				inp = h
+				inp = tf.layers.dropout(h,rate=0.5,training=train)
 
 				with tf.name_scope("gates"):
 					with tf.name_scope("ft"):

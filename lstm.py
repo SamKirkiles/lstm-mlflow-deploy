@@ -22,7 +22,6 @@ class LSTM:
 	# Test mode placeholders
 	h_predict_placeholder = None
 	c_predict_placeholder = None
-	hidden_states_pred = None
 	x_predict_placeholder = None
 
 	def __init__(self):
@@ -52,7 +51,7 @@ class LSTM:
 			self.c_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
 
 			one_hot_init = np.zeros((self.vocab_size,1),dtype=np.float32)
-			one_hot_init[self.char_to_ix['A']] = 1
+			one_hot_init[self.char_to_ix['a']] = 1
 			
 			out = ""
 
@@ -84,7 +83,7 @@ class LSTM:
 		self.c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
 		self.x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 
-		self.hidden_states_pred = tf.stack([self.h_predict_placeholder,self.c_predict_placeholder])
+		hidden_states_pred = tf.stack([self.h_predict_placeholder,self.c_predict_placeholder])
 
 
 		with tf.variable_scope("Wout",reuse=tf.AUTO_REUSE):
@@ -99,7 +98,7 @@ class LSTM:
 		with tf.name_scope("predict_hidden"):
 			with tf.device(device):	
 
-				state = self.lstm_cell(self.hidden_states_pred,self.x_predict_placeholder,train=False)
+				state = self.lstm_cell(.hidden_states_pred,self.x_predict_placeholder,train=False)
 
 				state_unstack = tf.unstack(state)
 				h,c = tf.unstack(state)

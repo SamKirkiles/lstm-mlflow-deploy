@@ -231,9 +231,9 @@ class LSTM:
 
 
 
-						feed_pred = {self.h_predict_placeholder: self.h_predict_prev,
-									 self.c_predict_placeholder: self.c_predict_prev,
-									 self.x_predict_placeholder: one_hot_init}
+						feed_pred = {h_predict_placeholder: self.h_predict_prev,
+									 c_predict_placeholder: self.c_predict_prev,
+									 x_predict_placeholder: one_hot_init}
 
 						softmax_pred,(h_pred,c_pred) = sess.run([h_softmax,state_unstack],feed_dict=feed_pred)
 

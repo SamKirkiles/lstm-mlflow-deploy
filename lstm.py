@@ -98,7 +98,7 @@ class LSTM:
 		with tf.name_scope("predict_hidden"):
 			with tf.device(device):	
 
-				state = self.lstm_cell(.hidden_states_pred,self.x_predict_placeholder,train=False)
+				state = self.lstm_cell(hidden_states_pred,self.x_predict_placeholder,train=False)
 
 				state_unstack = tf.unstack(state)
 				h,c = tf.unstack(state)

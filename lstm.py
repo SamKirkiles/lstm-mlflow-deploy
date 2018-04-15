@@ -62,8 +62,8 @@ class LSTM:
 
 		with tf.Session() as sess:
 			if restore:
-				print("Restored variables from checkpoint: " + str(tf.train.list_variables(os.path.join("./saves/model.ckpt"))))
-				saver.restore(sess, "./saves/model.ckpt")
+				
+				saver.restore(sess, tf.train.latest_checkpoint('./saves/model.ckpt'))
 			else:
 				sess.run(tf.global_variables_initializer())
 
@@ -187,7 +187,7 @@ class LSTM:
 
 			# initialize all veraibles
 			if restore:
-  				saver.restore(sess, "./saves/model.ckpt")
+  				saver.restore(sess, tf.train.latest_checkpoint('./saves/model.ckpt'))
 			else:
 				sess.run(tf.global_variables_initializer())
 

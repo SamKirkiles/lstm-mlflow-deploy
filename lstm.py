@@ -171,14 +171,13 @@ class LSTM:
 		with tf.name_scope("predict_hidden"):
 			with tf.device(device):	
 
-
-				h_predict_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="h_prev")
-				c_predict_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="c_prev")
+				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
+				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
 				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
 
 				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 
-				state = self.lstm_cell(hidden_states,x_predict_placeholder,train=False)
+				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder,train=False)
 
 				state_unstack = tf.unstack(state)
 				h,c = tf.unstack(state)
@@ -229,8 +228,6 @@ class LSTM:
 
 					for i in range(300):
 
-
-
 						feed_pred = {h_predict_placeholder: self.h_predict_prev,
 									 c_predict_placeholder: self.c_predict_prev,
 									 x_predict_placeholder: one_hot_init}
@@ -250,6 +247,7 @@ class LSTM:
 
 					print("####### Loss: " + str(loss_output) + " ########")
 					print(out)
+
 
 					save_path = saver.save(sess, "./saves/model.ckpt")
 					print("Model saved in path: %s" % save_path)

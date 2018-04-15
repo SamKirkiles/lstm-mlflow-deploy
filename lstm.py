@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
 import os 
+import pickle
+
 class LSTM:
 
 	vocab_size = None
@@ -23,12 +25,18 @@ class LSTM:
 		pass
 
 	def test(self,data,seq_length=1000,gpu=False,restore=False):
-
 		chars = list(set(data))
 		self.data_size,self.vocab_size = len(data),len(chars)
 
-		self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
-		self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
+		if restore:
+			with open('./saves/ix_to_char.pickle', 'rb') as f:
+				self.ix_to_char = pickle.load(f)
+			with open('./saves/char_to_ix.pickle', 'rb') as f:
+				self.char_to_ix = pickle.load(f)
+		else:
+			self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
+			self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
+
 
 		Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
 
@@ -103,12 +111,21 @@ class LSTM:
 
 		print("Training with run id: " + str(run_id))
 
-		# Create data tables
 		chars = list(set(data))
 		self.data_size,self.vocab_size = len(data),len(chars)
 
-		self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
-		self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
+		if restore:
+			with open('./saves/ix_to_char.pickle') as f:
+			    self.ix_to_col = json.load(f)
+			with open('./saves/char_to_ix.pickle') as f:
+			    self.col_to_ix = json.load(f)
+		else:
+			with open('./saves/ix_to_char.pickle', 'wb') as f:
+				self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
+				pickle.dump(self.ix_to_char, f)
+			with open('./saves/char_to_ix.pickle', 'wb') as f:
+				self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
+				pickle.dump(self.char_to_ix, f)
 
 		# Define graph (This is one lstm cell but we want multiple cells)	
 

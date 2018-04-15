@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-
+import os 
 class LSTM:
 
 	vocab_size = None
@@ -30,10 +30,7 @@ class LSTM:
 		self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
 		self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
 
-
-		with tf.variable_scope("Wout",reuse=tf.AUTO_REUSE):
-
-			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+		Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
 
 		# Define graph
 		if gpu == True:
@@ -65,7 +62,8 @@ class LSTM:
 
 		with tf.Session() as sess:
 			if restore:
-  				saver.restore(sess, "./saves/model.ckpt")
+				print("Restored variables from checkpoint: " + str(tf.train.list_variables(os.path.join("./saves/model.ckpt"))))
+				saver.restore(sess, "./saves/model.ckpt")
 			else:
 				sess.run(tf.global_variables_initializer())
 

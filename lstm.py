@@ -11,17 +11,106 @@ class LSTM:
 	char_to_ix = {}
 	ix_to_char = {}
 
+	# Train mode hiddne state
 	h_state_prev = None
 	c_state_prev = None
 
+	# Test mode hidden state
 	h_predict_prev = None
 	c_predict_prev = None
+
+	# Test mode placeholders
+	h_predict_placeholder = None
+	c_predict_placeholder = None
+	hidden_states_pred = None
+	x_predict_placeholder = None
 
 	def __init__(self):
 		pass
 
+	def test(self,data,seq_length=1000,gpu=False,restore=False):
 
-	def train(self,data,gpu=False):
+		chars = list(set(data))
+		self.data_size,self.vocab_size = len(data),len(chars)
+
+		self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
+		self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
+
+		# Define graph
+		pred_softmax,pred_hidden_state = self.test_graph(gpu)
+
+		saver = tf.train.Saver()
+
+		with tf.Session() as sess:
+			if restore:
+  				saver.restore(sess, "./saves/model.ckpt")
+			else:
+				sess.run(tf.global_variables_initializer())
+
+			self.h_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
+			self.c_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
+
+			one_hot_init = np.zeros((self.vocab_size,1),dtype=np.float32)
+			one_hot_init[self.char_to_ix['A']] = 1
+			
+			out = ""
+
+			for i in range(1000):
+
+				feed_pred = {self.h_predict_placeholder: self.h_predict_prev,
+							 self.c_predict_placeholder: self.c_predict_prev,
+							 self.x_predict_placeholder: one_hot_init}
+
+				softmax_pred,(h_pred,c_pred) = sess.run([pred_softmax,pred_hidden_state],feed_dict=feed_pred)
+
+				self.h_predict_prev = h_pred
+				self.c_predict_prev = c_pred
+
+				one_hot_n = np.random.choice(range(self.vocab_size),p=np.ravel(softmax_pred))
+				one_hot_init = np.zeros((self.vocab_size),dtype=np.float32)
+				one_hot_init[one_hot_n] = 1
+				one_hot_init = np.reshape(one_hot_init,(self.vocab_size,1))
+
+				out += self.ix_to_char[one_hot_n]
+			return out
+
+
+
+	def test_graph(self,gpu=False):
+
+		# Defines the graph for one iteration of test
+		self.h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
+		self.c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
+		self.x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
+
+		self.hidden_states_pred = tf.stack([self.h_predict_placeholder,self.c_predict_placeholder])
+
+
+		with tf.variable_scope("Wout",reuse=tf.AUTO_REUSE):
+
+			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+
+		if gpu == True:
+			device = "/gpu:1"
+		else:
+			device = "/cpu:0"
+
+		with tf.name_scope("predict_hidden"):
+			with tf.device(device):	
+
+				state = self.lstm_cell(self.hidden_states_pred,self.x_predict_placeholder,train=False)
+
+				state_unstack = tf.unstack(state)
+				h,c = tf.unstack(state)
+				h = h[-1]
+				c = c[-1]
+
+				h_pred_out = tf.matmul(Wout, h)	
+				h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
+
+				return h_softmax, state_unstack
+
+	def train(self,data,gpu=False,restore=False):
 
 		run_id = np.random.randint(1000)
 		seq_length = 50
@@ -72,31 +161,11 @@ class LSTM:
 			optimize = tf.train.AdagradOptimizer(0.1).minimize(loss)
 
 			hidden_state = tf.unstack(batch,axis=1)
-			# now compute loss and what not
 
-		if gpu == True:
-			device = "/gpu:1"
-		else:
-			device = "/cpu:0"
+			# Test Graph
+			pred_softmax,pred_hidden_state = self.test_graph(gpu)
 
-		with tf.name_scope("predict_hidden"):
-			with tf.device(device):	
-
-				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
-				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
-				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
-
-				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
-
-				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder,train=False)
-
-				state_unstack = tf.unstack(state)
-				h,c = tf.unstack(state)
-				h = h[-1]
-				c = c[-1]
-
-				h_pred_out = tf.matmul(Wout, h)	
-				h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
+			saver = tf.train.Saver()
 
 
 		with tf.Session() as sess:
@@ -131,13 +200,13 @@ class LSTM:
 					
 					out = ""
 
-					for i in range(200):
+					for i in range(300):
 
-						feed_pred = {h_predict_placeholder: self.h_predict_prev,
-									 c_predict_placeholder: self.c_predict_prev,
-									 x_predict_placeholder: one_hot_init}
+						feed_pred = {self.h_predict_placeholder: self.h_predict_prev,
+									 self.c_predict_placeholder: self.c_predict_prev,
+									 self.x_predict_placeholder: one_hot_init}
 
-						softmax_pred,(h_pred,c_pred) = sess.run([h_softmax,state_unstack],feed_dict=feed_pred)
+						softmax_pred,(h_pred,c_pred) = sess.run([pred_softmax,pred_hidden_state],feed_dict=feed_pred)
 
 						self.h_predict_prev = h_pred
 						self.c_predict_prev = c_pred
@@ -153,6 +222,10 @@ class LSTM:
 					print("####### Loss: " + str(loss_output) + " ########")
 					print(out)
 
+					save_path = saver.save(sess, "./saves/model.ckpt")
+					print("Model saved in path: %s" % save_path)
+
+
 				inputs = np.array([self.char_to_ix[ch] for ch in data[i:i+seq_length]])
 				targets = np.array([self.char_to_ix[ch] for ch in data[i+1:i+seq_length+1]])
 
@@ -161,6 +234,7 @@ class LSTM:
 
 				targets_one_hot = np.zeros((targets.shape[0],self.vocab_size),dtype=np.float32)
 				targets_one_hot[np.arange(targets.shape[0]),targets] = 1
+
 
 				feed = {inputs_placeholder:inputs_one_hot, 
 						labels_placeholder:targets_one_hot, 

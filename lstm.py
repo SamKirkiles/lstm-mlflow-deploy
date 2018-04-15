@@ -39,7 +39,8 @@ class LSTM:
 		# Define graph
 		pred_softmax,pred_hidden_state = self.test_graph(gpu)
 
-		saver = tf.train.Saver()
+		with tf.device("/cpu:0"):
+			saver = tf.train.Saver()
 
 		with tf.Session() as sess:
 			if restore:
@@ -164,7 +165,7 @@ class LSTM:
 
 			# Test Graph
 			pred_softmax,pred_hidden_state = self.test_graph(gpu)
-
+		with tf.device("/cpu:0"):
 			saver = tf.train.Saver()
 
 

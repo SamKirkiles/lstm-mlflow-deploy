@@ -226,8 +226,8 @@ class LSTM:
 					print("####### Loss: " + str(loss_output) + " ########")
 					print(out)
 
-					#save_path = saver.save(sess, "./saves/model.ckpt")
-					#print("Model saved in path: %s" % save_path)
+					save_path = saver.save(sess, "./saves/model.ckpt")
+					print("Model saved in path: %s" % save_path)
 
 
 				inputs = np.array([self.char_to_ix[ch] for ch in data[i:i+seq_length]])
@@ -278,7 +278,8 @@ class LSTM:
 
 			x = tf.reshape(x,[self.vocab_size,1])
 			h_prev,c_prev = tf.unstack(state)
-			inp = tf.layers.dropout(x,rate=0.5,training=train)
+			#inp = tf.layers.dropout(x,rate=0.5,training=train)
+			inp = x
 
 			h_full, c_full = [], []
 
@@ -304,8 +305,9 @@ class LSTM:
 
 			for i in range(1,self.num_layers):
 
-				inp = tf.layers.dropout(h,rate=0.5,training=train)
-
+				#inp = tf.layers.dropout(h,rate=0.5,training=train)
+				inp = x
+				
 				with tf.name_scope("gates"):
 					with tf.name_scope("ft"):
 						ft = tf.sigmoid(tf.matmul(W[i][0],inp) + tf.matmul(U[i][0],h_prev[i]) + b[i][0])

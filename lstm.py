@@ -115,10 +115,10 @@ class LSTM:
 		self.data_size,self.vocab_size = len(data),len(chars)
 
 		if restore:
-			with open('./saves/ix_to_char.pickle') as f:
-			    self.ix_to_col = json.load(f)
-			with open('./saves/char_to_ix.pickle') as f:
-			    self.col_to_ix = json.load(f)
+			with open('./saves/ix_to_char.pickle','rb') as f:
+			    self.ix_to_col = pickle.load(f)
+			with open('./saves/char_to_ix.pickle','rb') as f:
+			    self.col_to_ix = pickle.load(f)
 		else:
 			with open('./saves/ix_to_char.pickle', 'wb') as f:
 				self.ix_to_char = {i:ch for i,ch in enumerate(chars)}

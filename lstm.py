@@ -18,12 +18,7 @@ class LSTM:
 	# Test mode hidden state
 	h_predict_prev = None
 	c_predict_prev = None
-
-	# Test mode placeholders
-	h_predict_placeholder = None
-	c_predict_placeholder = None
-	x_predict_placeholder = None
-
+ 
 	def __init__(self):
 		pass
 
@@ -35,8 +30,35 @@ class LSTM:
 		self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
 		self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
 
+
+		with tf.variable_scope("Wout",reuse=tf.AUTO_REUSE):
+
+			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+
 		# Define graph
-		pred_softmax,pred_hidden_state = self.test_graph(gpu)
+		if gpu == True:
+			device = "/gpu:1"
+		else:
+			device = "/cpu:0"
+
+
+		with tf.name_scope("predict_hidden"):
+			with tf.device(device):	
+				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
+				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
+				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
+
+				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
+
+				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder,train=False)
+
+				pred_hidden_state = tf.unstack(state)
+				h,c = tf.unstack(state)
+				h = h[-1]
+				c = c[-1]
+
+				h_pred_out = tf.matmul(Wout, h)	
+				h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
 
 		with tf.device("/cpu:0"):
 			saver = tf.train.Saver()
@@ -57,11 +79,11 @@ class LSTM:
 
 			for i in range(1000):
 
-				feed_pred = {self.h_predict_placeholder: self.h_predict_prev,
-							 self.c_predict_placeholder: self.c_predict_prev,
-							 self.x_predict_placeholder: one_hot_init}
+				feed_pred = {h_predict_placeholder: self.h_predict_prev,
+							 c_predict_placeholder: self.c_predict_prev,
+							 x_predict_placeholder: one_hot_init}
 
-				softmax_pred,(h_pred,c_pred) = sess.run([pred_softmax,pred_hidden_state],feed_dict=feed_pred)
+				softmax_pred,(h_pred,c_pred) = sess.run([h_softmax,pred_hidden_state],feed_dict=feed_pred)
 
 				self.h_predict_prev = h_pred
 				self.c_predict_prev = c_pred
@@ -75,40 +97,6 @@ class LSTM:
 			return out
 
 
-
-	def test_graph(self,gpu=False):
-
-		# Defines the graph for one iteration of test
-		self.h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
-		self.c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
-		self.x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
-
-		hidden_states_pred = tf.stack([self.h_predict_placeholder,self.c_predict_placeholder])
-
-
-		with tf.variable_scope("Wout",reuse=tf.AUTO_REUSE):
-
-			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
-
-		if gpu == True:
-			device = "/gpu:1"
-		else:
-			device = "/cpu:0"
-
-		with tf.name_scope("predict_hidden"):
-			with tf.device(device):	
-
-				state = self.lstm_cell(hidden_states_pred,self.x_predict_placeholder,train=False)
-
-				state_unstack = tf.unstack(state)
-				h,c = tf.unstack(state)
-				h = h[-1]
-				c = c[-1]
-
-				h_pred_out = tf.matmul(Wout, h)	
-				h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
-
-				return h_softmax, state_unstack
 
 	def train(self,data,gpu=False,restore=False):
 

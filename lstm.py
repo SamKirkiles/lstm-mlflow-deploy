@@ -38,7 +38,7 @@ class LSTM:
 			self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
 
 
-		Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+		Wout = tf.get_variable(name="Wout",shape=[self.hidden_size,self.vocab_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
 
 		# Define graph
 		if gpu == True:
@@ -46,24 +46,28 @@ class LSTM:
 		else:
 			device = "/cpu:0"
 
-
 		with tf.name_scope("predict_hidden"):
 			with tf.device(device):	
+
 				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
 				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
-				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
-
 				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
+
+				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 
 				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder,train=False)
 
-				pred_hidden_state = tf.unstack(state)
+				state_unstack = tf.unstack(state)
 				h,c = tf.unstack(state)
-				h = h[-1]
-				c = c[-1]
 
-				h_pred_out = tf.matmul(Wout, h)	
-				h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
+				# Get the last layer 
+				#remember we dont have this over every time step
+
+				h = tf.transpose(h[-1])
+				c = tf.transpose(c[-1])
+
+				h_pred_out = tf.matmul(h,Wout)	
+				h_softmax = tf.nn.softmax(tf.squeeze(h_pred_out))
 
 		with tf.device("/cpu:0"):
 			saver = tf.train.Saver()
@@ -89,7 +93,7 @@ class LSTM:
 							 c_predict_placeholder: self.c_predict_prev,
 							 x_predict_placeholder: one_hot_init}
 
-				softmax_pred,(h_pred,c_pred) = sess.run([h_softmax,pred_hidden_state],feed_dict=feed_pred)
+				softmax_pred,(h_pred,c_pred) = sess.run([h_softmax,state_unstack],feed_dict=feed_pred)
 
 				self.h_predict_prev = h_pred
 				self.c_predict_prev = c_pred
@@ -147,23 +151,24 @@ class LSTM:
 
 			# this will be [25,2,vocab_size]
 			batch = tf.scan(self.lstm_cell,inputs_placeholder,initializer=hidden_states)
+			hidden_unstack = tf.unstack(batch,axis=1)
 			h_outputs,c_outputs = tf.unstack(batch,axis=1)
 
 			h_outputs = h_outputs[:,-1,:,:]
 			c_outputs = c_outputs[:,-1,:,:]
 
-			Wout = tf.get_variable(name="Wout",shape=[self.vocab_size,self.hidden_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+			Wout = tf.get_variable(name="Wout",shape=[self.hidden_size,self.vocab_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
 
+			# make h output 50x512
 			h_outputs = tf.squeeze(h_outputs,axis=2)
+			h_new = tf.matmul(h_outputs,Wout)
+			print(h_new)
 
-			h_new = tf.transpose(tf.matmul(Wout, tf.transpose(h_outputs)))
-
-			softmax = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels_placeholder,logits=h_new)
+			losses = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels_placeholder,logits=h_new)
 			
-			loss = tf.reduce_mean(softmax)
+			loss = tf.reduce_mean(losses)
 			optimize = tf.train.AdagradOptimizer(0.1).minimize(loss)
 
-			hidden_state = tf.unstack(batch,axis=1)
 
 		# Test Graph
 		if gpu == True:
@@ -184,11 +189,15 @@ class LSTM:
 
 				state_unstack = tf.unstack(state)
 				h,c = tf.unstack(state)
-				h = h[-1]
-				c = c[-1]
 
-				h_pred_out = tf.matmul(Wout, h)	
-				h_softmax = tf.reshape(tf.nn.softmax(tf.squeeze(h_pred_out)),[self.vocab_size,1])
+				# Get the last layer 
+				#remember we dont have this over every time step
+
+				h = tf.transpose(h[-1])
+				c = tf.transpose(c[-1])
+
+				h_pred_out = tf.matmul(h,Wout)	
+				h_softmax = tf.nn.softmax(tf.squeeze(h_pred_out))
 
 		with tf.device("/cpu:0"):
 			saver = tf.train.Saver()
@@ -274,7 +283,7 @@ class LSTM:
 				# Compute hidden states
 
 				_,loss_output = sess.run([optimize, loss],feed_dict=feed)
-				h_steps,c_steps= sess.run(hidden_state,feed_dict=feed)
+				h_steps,c_steps= sess.run(hidden_unstack,feed_dict=feed)
 
 				# set new hidden states
 				self.h_state_prev = h_steps[-1]

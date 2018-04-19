@@ -64,8 +64,8 @@ class LSTM:
 			with tf.device(self.heavy_device):
 
 				# This will end up being shape [batch_size,state_size] currently it is [batch_size, seq_length]
-				x_ = tf.placeholder(shape=[None,None],dtype=tf.int32,name="x_")
-				y_ = tf.placeholder(shape=[None],dtype=tf.int32,name="y_")
+				x_ = tf.placeholder(shape=[None,None],dtype=tf.int64,name="x_")
+				y_ = tf.placeholder(shape=[None],dtype=tf.int64,name="y_")
 				initial_state = tf.placeholder(shape=[2,self.layers,None,self.state_size],dtype=tf.float32,name='initial_state')
 				
 				# Create embedding. This will be a trainable parameter.

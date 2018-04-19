@@ -98,7 +98,7 @@ class LSTM:
 				b_f = tf.get_variable(name="b_f",shape=[self.num_classes],initializer=tf.zeros_initializer())
 
 				# reshape to size [batch_size * seq_length, state_size]
-				logits = tf.matmul(tf.reshape(states,[-1,self.state_size]),W_f)
+				logits = tf.matmul(tf.reshape(states,[-1,self.state_size]),W_f) + bf
 
 				# Create our predictions
 				predictions = tf.nn.softmax(logits)
@@ -156,6 +156,8 @@ class LSTM:
 						print("Saving model....")
 						save_path = saver.save(sess, "./saves/model.ckpt")
 					i += 1
+					print(i, end="\r", flush=True)
+
 
 			except KeyboardInterrupt:
 				print("Interrupted... Saving model.")

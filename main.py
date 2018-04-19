@@ -6,7 +6,8 @@ import sys
 import data
 import pickle
 
-gpu = False
+light_device = "/cpu:0"
+heavy_device = "/cpu:0"
 test = False
 restore = False
 
@@ -24,7 +25,7 @@ def main():
 
 	train_set = data.train_set(X,Y,128)
 
-	solver = lstm.LSTM(num_classes=len(char2ix))
+	solver = lstm.LSTM(num_classes=len(char2ix), heavy_device=heavy_device,light_device=light_device)
 
 
 	if test == False:
@@ -35,9 +36,11 @@ def main():
 if __name__ == "__main__":
 	for o in sys.argv[1:]:
 		if o == '--gpu':
-			gpu = True
+			heavy_device = "/gpu:0"
+			light_device = "/cpu:0"
 		elif o == '--cpu':
-			gpu = False
+			heavy_device = "/cpu:0"
+			light_device = "/cpu:0"
 		elif o == '--test':
 			test = True
 		elif o == '--train':

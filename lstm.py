@@ -128,7 +128,7 @@ class LSTM:
 		with tf.device(self.light_device):
 			saver = tf.train.Saver()
 
-		with tf.Session() as sess:
+		with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
 			try:
 
 				if restore:
@@ -169,7 +169,7 @@ class LSTM:
 
 			saver = tf.train.Saver()
 
-		with tf.Session() as sess:
+		with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
 
 			# init session
 			if restore:

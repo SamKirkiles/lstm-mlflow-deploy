@@ -5,7 +5,7 @@ import pickle
 
 class LSTM:
 
-	def __init__(self,num_classes,state_size=512,layers=3,heavy_device=None,light_device=None):
+	def __init__(self,num_classes,state_size=512,layers=2,heavy_device=None,light_device=None):
 		# Initializes the lstm and builds the graph when run
 
 		self.state_size = state_size

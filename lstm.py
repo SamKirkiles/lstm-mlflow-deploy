@@ -149,7 +149,8 @@ class LSTM:
 
 					_,loss = sess.run([self.optimize,self.loss],feed_dict=feed)
 
-					print(loss)
+					if (i%100 == 0):
+						print("Loss: " + str(loss))
 
 			except KeyboardInterrupt:
 				print("Interrupted... Saving model.")

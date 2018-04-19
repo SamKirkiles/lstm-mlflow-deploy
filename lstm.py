@@ -98,7 +98,7 @@ class LSTM:
 				b_f = tf.get_variable(name="b_f",shape=[self.num_classes],initializer=tf.zeros_initializer())
 
 				# reshape to size [batch_size * seq_length, state_size]
-				logits = tf.matmul(tf.reshape(states,[-1,self.state_size]),W_f) + bf
+				logits = tf.matmul(tf.reshape(states,[-1,self.state_size]),W_f) + b_f
 
 				# Create our predictions
 				predictions = tf.nn.softmax(logits)

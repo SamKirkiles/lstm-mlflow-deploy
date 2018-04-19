@@ -24,7 +24,7 @@ class LSTM:
 				# Using embeddings we can reshape our number of features into the size of our desired hidden shape
 
 				# Get weights or initialize if not already in graph
-				W = tf.get_variable(name="W",shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+				W = tf.get_variable(name="W",shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=0.08,maxval=0.08))
 				U = tf.get_variable(name = "U",shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
 				b = tf.get_variable(name="b", shape=[self.layers, 4, self.state_size], initializer=tf.zeros_initializer())
 
@@ -145,6 +145,7 @@ class LSTM:
 					_,loss = sess.run([self.optimize,self.loss],feed_dict=feed)
 
 					print(loss)
+
 			except KeyboardInterrupt:
 				print("Interrupted... Saving model.")
 
@@ -160,7 +161,7 @@ class LSTM:
 		out = ""
 
 		saver = tf.train.Saver()
-		
+
 		with tf.Session() as sess:
 
 			# init session

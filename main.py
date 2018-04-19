@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import lstm
 import sys
+import data
 
 gpu = False
 test = False
@@ -10,14 +11,18 @@ restore = False
 
 def main():
 	run_id = np.random.randint(1000)
-	data = open('warandpeace.txt','r',encoding='utf-8').read()
 
-	solver = lstm.LSTM()
+	X, Y, char2ix, ix2char = data.read_data("warandpeace.txt",sequence_length=20)
+	# Generator to get random samples
+	train_set = data.train_set(X,Y,128)
+
+	solver = lstm.LSTM(num_classes=len(char2ix))
+
 
 	if test == False:
-		solver.train(data,gpu,restore=restore)
+		solver.train(train_set)
 	else:
-		print(solver.test(data,gpu=gpu,restore=restore))
+		print(solver.generate(char2ix,ix2char,1000))
 
 if __name__ == "__main__":
 	for o in sys.argv[1:]:

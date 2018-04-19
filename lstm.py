@@ -5,359 +5,192 @@ import pickle
 
 class LSTM:
 
-	vocab_size = None
-	data_size = None
-	num_layers = 3
-	hidden_size = 512
+	def __init__(self,num_classes,state_size=512,layers=3):
+		# Initializes the lstm and builds the graph when run
 
-	char_to_ix = {}
-	ix_to_char = {}
+		self.state_size = state_size
+		self.layers = layers
+		self.num_classes = num_classes
 
-	# Train mode hiddne state
-	h_state_prev = None
-	c_state_prev = None
+		def __graph__():
 
-	# Test mode hidden state
-	h_predict_prev = None
-	c_predict_prev = None
- 
-	def __init__(self):
-		pass
+			# Build the graph that will process one batch 
 
-	def test(self,data,seq_length=1000,gpu=False,restore=False):
-		chars = list(set(data))
-		self.data_size,self.vocab_size = len(data),len(chars)
+			def step(prev,x):
 
-		if restore:
-			with open('./saves/ix_to_char.pickle', 'rb') as f:
-				self.ix_to_char = pickle.load(f)
-			with open('./saves/char_to_ix.pickle', 'rb') as f:
-				self.char_to_ix = pickle.load(f)
-		else:
-			self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
-			self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
+				# x will be a tensor of shape [batch_size,state_size]
+				# prev will be a tensor of shape [2, num_layers, batch_size, state_size]
+				# We will unstack this and return a tensor of the same shape to be passed into the next timestep
+				# Using embeddings we can reshape our number of features into the size of our desired hidden shape
+
+				# Get weights or initialize if not already in graph
+				W = tf.get_variable(name="W",shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+				U = tf.get_variable(name = "U",shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+				b = tf.get_variable(name="b", shape=[self.layers, 4, self.state_size], initializer=tf.zeros_initializer())
+
+				h_prev,c_prev = tf.unstack(prev)
+				h_full, c_full = [], []
+
+				inp = x
+
+				for i in range(self.layers):
+
+					with tf.name_scope("gates"):
+						with tf.name_scope("ft"):
+							ft = tf.sigmoid(tf.matmul(inp,W[i][0]) + tf.matmul(h_prev[i],U[i][0]) + b[i][0])
+						with tf.name_scope("it"):
+							it = tf.sigmoid(tf.matmul(inp,W[i][1]) + tf.matmul(h_prev[i],U[i][1]) + b[i][1])
+						with tf.name_scope("ot"):
+							ot = tf.sigmoid(tf.matmul(inp,W[i][2]) + tf.matmul(h_prev[i],U[i][2]) + b[i][2])
+						with tf.name_scope("ct"):
+							ct = tf.tanh(tf.matmul(inp,W[i][3]) + tf.matmul(h_prev[i],U[i][3]) + b[i][3])
+
+					with tf.name_scope("c"):
+						c = (ft * c_prev[i]) + (it * ct)
+					with tf.name_scope("h"):
+						h = ot * tf.tanh(c)
+
+					h_full.append(h)
+					c_full.append(c)
+
+					inp = h
+
+				return tf.stack([h_full,c_full])
 
 
-		Wout = tf.get_variable(name="Wout",shape=[self.hidden_size,self.vocab_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+			# This will end up being shape [batch_size,state_size] currently it is [batch_size, seq_length]
+			x_ = tf.placeholder(shape=[None,None],dtype=tf.int32,name="x_")
+			y_ = tf.placeholder(shape=[None],dtype=tf.int32,name="y_")
+			initial_state = tf.placeholder(shape=[2,self.layers,None,self.state_size],dtype=tf.float32,name='initial_state')
+			
+			# Create embedding. This will be a trainable parameter.
+			embedding = tf.get_variable("embedding",shape=[self.num_classes,self.state_size])
+			# This will create a tensor size of [batch_size, seq_length, state_size] which we can feed into our graph
+			inputs = tf.nn.embedding_lookup(embedding,x_)
 
-		# Define graph
-		if gpu == True:
-			device = "/gpu:1"
-		else:
-			device = "/cpu:0"
+			# We need to reshape inputs to have seq_length as its first dimension so tf.scan can run over it giving us [batch_size,state_size] at each time step
+			inputs = tf.transpose(inputs,[1,0,2])
 
-		with tf.name_scope("predict_hidden"):
-			with tf.device(device):	
+			# Now we can pass inputs into tf.scan
+			# This will give us an output size of [seq_length, 2, num_layers, batch_size, state_size] 
 
-				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
-				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
-				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
+			outputs = tf.scan(step,inputs,initial_state)
 
-				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
 
-				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder,train=False)
+			# TODO: Expose this later
+			last_state = outputs[-1]
 
-				state_unstack = tf.unstack(state)
-				h,c = tf.unstack(state)
+			# We only want the hidden state on the last layer
+			# This should be of size batch_size, seq_length, state_size
+			# if we reshape the first two dimensions we can do a matrix multiply with our new weights to compute logits
+			states = tf.transpose(outputs,[1,2,3,0,4])[0][-1]
 
-				# Get the last layer 
-				#remember we dont have this over every time step
+			# Now we create our final hidden layer weights
+			# Our Y value will in theory be size of [batch_size, seq_length * num_classes] except we will reshape this into a column vector 
+			# and it will not be onehot because sparse softmax will handle this
+			
+			W_f = tf.get_variable(name="W_f",shape=[self.state_size,self.num_classes],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+			b_f = tf.get_variable(name="b_f",shape=[self.num_classes],initializer=tf.zeros_initializer())
 
-				h = tf.transpose(h[-1])
-				c = tf.transpose(c[-1])
+			# reshape to size [batch_size * seq_length, state_size]
+			logits = tf.matmul(tf.reshape(states,[-1,self.state_size]),W_f)
 
-				h_pred_out = tf.matmul(h,Wout)	
-				h_softmax = tf.nn.softmax(tf.squeeze(h_pred_out))
+			# Create our predictions
+			predictions = tf.nn.softmax(logits)
 
-		with tf.device("/cpu:0"):
-			saver = tf.train.Saver()
+			# Because this is sparse softmax, y_ will become onehot and of shape [batch_size * seq_length, num_classes]
+			# Remember it is already size [batch_length * seq_length] because each character is represented by an int index
+			losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,labels=y_)
 
-		with tf.Session() as sess:
-			if restore:
-				print(tf.train.latest_checkpoint('./saves'))
-				saver.restore(sess, tf.train.latest_checkpoint('./saves'))
-			else:
+			loss = tf.reduce_mean(losses)
+
+			optimize = tf.train.AdagradOptimizer(0.1).minimize(loss)
+
+			self.x_ = x_
+			self.y_ = y_
+			self.initial_state = initial_state
+			self.predictions = predictions
+			self.loss = loss
+			self.optimize = optimize
+			self.last_state = last_state
+
+		print("Building Graph")
+		__graph__()
+		print("Done.")
+
+	def train(self,train_step,epochs=100):
+		# Called to train model
+		
+		try:
+			with tf.Session() as sess:
+
 				sess.run(tf.global_variables_initializer())
 
-			self.h_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
-			self.c_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
+				for i in range(epochs):
+					# Get our batch of random samples 
+					# Now let's encode this in an embedding 
+					x_sample, y_sample = train_step.__next__()
 
-			one_hot_init = np.zeros((self.vocab_size,1),dtype=np.float32)
-			one_hot_init[self.char_to_ix['a']] = 1
-			
-			out = ""
+					batch_size = x_sample.shape[0]
 
-			for i in range(1000):
+					feed = {self.x_: x_sample,
+							self.y_: y_sample.flatten(),
+							self.initial_state: np.zeros(shape=(2,self.layers,batch_size,self.state_size),dtype=np.float32)}
 
-				feed_pred = {h_predict_placeholder: self.h_predict_prev,
-							 c_predict_placeholder: self.c_predict_prev,
-							 x_predict_placeholder: one_hot_init}
+					_,loss = sess.run([self.optimize,self.loss],feed_dict=feed)
 
-				softmax_pred,(h_pred,c_pred) = sess.run([h_softmax,state_unstack],feed_dict=feed_pred)
+					print(loss)
+		except KeyboardInterrupt:
+			print("Interrupted... Saving model.")
 
-				self.h_predict_prev = h_pred
-				self.c_predict_prev = c_pred
 
-				one_hot_n = np.random.choice(range(self.vocab_size),p=np.ravel(softmax_pred))
-				one_hot_init = np.zeros((self.vocab_size),dtype=np.float32)
-				one_hot_init[one_hot_n] = 1
-				one_hot_init = np.reshape(one_hot_init,(self.vocab_size,1))
 
-				out += self.ix_to_char[one_hot_n]
+	def generate(self,char2ix,ix2char,seq_length):
+		# Called to generate samples from trained model
+
+		# create seed 
+
+		seed = np.random.choice(list(char2ix.values()))
+
+		out = ""
+
+		with tf.Session() as sess:
+
+			# init session
+			sess.run(tf.global_variables_initializer())
+
+			initialize = False
+
+			for i in range(seq_length):
+
+				if initialize == False:
+					# if it is the first letter in sequence, intialize with default hidden states
+					feed = {
+						self.x_: np.array([seed]).reshape(1,1),
+						self.initial_state: np.zeros(shape=(2,self.layers,1,self.state_size),dtype=np.float32)
+					}
+				else:				
+					# otherwise, we need to intialize previous hidden state with the returned last state	
+					feed = {
+						self.x_: np.array([seed]).reshape(1,1),
+						self.initial_state: last_state
+					}
+
+
+				predictions,last_state = sess.run([self.predictions,self.last_state],feed_dict = feed)
+
+				initialize = True
+
+				seed = np.random.choice(range(len(ix2char)),p=np.ravel(predictions))
+
+				out += ix2char[seed]
+
 			return out
 
 
 
-	def train(self,data,gpu=False,restore=False):
 
-		run_id = np.random.randint(1000)
-		seq_length = 50
 
-		print("Training with run id: " + str(run_id))
 
-		chars = list(set(data))
-		self.data_size,self.vocab_size = len(data),len(chars)
 
-		if restore:
-			with open('./saves/ix_to_char.pickle','rb') as f:
-			    self.ix_to_char = pickle.load(f)
-			with open('./saves/char_to_ix.pickle','rb') as f:
-			    self.char_to_ix = pickle.load(f)
-		else:
-			with open('./saves/ix_to_char.pickle', 'wb') as f:
-				self.ix_to_char = {i:ch for i,ch in enumerate(chars)}
-				pickle.dump(self.ix_to_char, f)
-			with open('./saves/char_to_ix.pickle', 'wb') as f:
-				self.char_to_ix = {ch:i for i,ch in enumerate(chars)}
-				pickle.dump(self.char_to_ix, f)
-
-		# Define graph (This is one lstm cell but we want multiple cells)	
-
-		if gpu == True:
-			device = "/gpu:0"
-		else:
-			device = "/cpu:0"
-
-		with tf.device(device):
-
-			with tf.name_scope("hidden_states"):
-
-				h_prev_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="h_prev")
-				c_prev_placeholder = tf.placeholder(shape=[self.num_layers,self.hidden_size,1],dtype=tf.float32,name="c_prev")
-				hidden_states = tf.stack([h_prev_placeholder,c_prev_placeholder])
-
-			inputs_placeholder = tf.placeholder(shape=[seq_length,self.vocab_size],dtype=tf.float32,name="batch")
-			labels_placeholder = tf.placeholder(shape=[seq_length,self.vocab_size],dtype=tf.float32,name="batch")
-
-			# this will be [25,2,vocab_size]
-			batch = tf.scan(self.lstm_cell,inputs_placeholder,initializer=hidden_states)
-			hidden_unstack = tf.unstack(batch,axis=1)
-			h_outputs,c_outputs = tf.unstack(batch,axis=1)
-
-			h_outputs = h_outputs[:,-1,:,:]
-			c_outputs = c_outputs[:,-1,:,:]
-
-			Wout = tf.get_variable(name="Wout",shape=[self.hidden_size,self.vocab_size],dtype=tf.float32,initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
-
-			# make h output 50x512
-			h_outputs = tf.squeeze(h_outputs,axis=2)
-			h_new = tf.matmul(h_outputs,Wout)
-			print(h_new)
-
-			losses = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels_placeholder,logits=h_new)
-			
-			loss = tf.reduce_mean(losses)
-			optimize = tf.train.AdagradOptimizer(0.1).minimize(loss)
-
-
-		# Test Graph
-		if gpu == True:
-			device = "/gpu:1"
-		else:
-			device = "/cpu:0"
-
-		with tf.name_scope("predict_hidden"):
-			with tf.device(device):	
-
-				h_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="h_predict")
-				c_predict_placeholder = tf.placeholder(shape=[self.num_layers, self.hidden_size, 1],dtype=tf.float32,name="c_predict")
-				hidden_states_pred = tf.stack([h_predict_placeholder,c_predict_placeholder])
-
-				x_predict_placeholder = tf.placeholder(shape=[self.vocab_size,1],dtype=tf.float32,name="x_predict")
-
-				state = self.lstm_cell(hidden_states_pred,x_predict_placeholder,train=False)
-
-				state_unstack = tf.unstack(state)
-				h,c = tf.unstack(state)
-
-				# Get the last layer 
-				#remember we dont have this over every time step
-
-				h = tf.transpose(h[-1])
-				c = tf.transpose(c[-1])
-
-				h_pred_out = tf.matmul(h,Wout)	
-				h_softmax = tf.nn.softmax(tf.squeeze(h_pred_out))
-
-		with tf.device("/cpu:0"):
-			saver = tf.train.Saver()
-
-
-		with tf.Session() as sess:
-
-			# Create summary writer
-			train_writer = tf.summary.FileWriter('out_graph/train_' + str(run_id), sess.graph)
-
-			i = 0
-			j = 0			
-
-			# initialize all veraibles
-			if restore:
-  				saver.restore(sess, tf.train.latest_checkpoint('./saves'))
-			else:
-				sess.run(tf.global_variables_initializer())
-
-			self.h_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
-			self.c_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
-			loss_output = 0
-
-			while True:
-
-				if i + seq_length + 1 >= len(data) or j == 0:
-					self.h_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
-					self.c_state_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
-					i = 0
-
-
-				if j%1000 == 0:
-					self.h_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
-					self.c_predict_prev = np.zeros(shape=(self.num_layers,self.hidden_size,1),dtype=np.float32)
-
-					one_hot_init = np.zeros((self.vocab_size,1),dtype=np.float32)
-					one_hot_init[self.char_to_ix['a']] = 1
-					
-					out = ""
-
-					for i in range(300):
-
-						feed_pred = {h_predict_placeholder: self.h_predict_prev,
-									 c_predict_placeholder: self.c_predict_prev,
-									 x_predict_placeholder: one_hot_init}
-
-						softmax_pred,(h_pred,c_pred) = sess.run([h_softmax,state_unstack],feed_dict=feed_pred)
-
-						self.h_predict_prev = h_pred
-						self.c_predict_prev = c_pred
-
-
-						one_hot_n = np.random.choice(range(self.vocab_size),p=np.ravel(softmax_pred))
-						one_hot_init = np.zeros((self.vocab_size),dtype=np.float32)
-						one_hot_init[one_hot_n] = 1
-						one_hot_init = np.reshape(one_hot_init,(self.vocab_size,1))
-
-						out += self.ix_to_char[one_hot_n]
-
-					print("####### Loss: " + str(loss_output) + " ########")
-					print(out)
-
-
-					save_path = saver.save(sess, "./saves/model.ckpt",global_step=j)
-					print("Model saved in path: %s" % save_path)
-
-
-				inputs = np.array([self.char_to_ix[ch] for ch in data[i:i+seq_length]])
-				targets = np.array([self.char_to_ix[ch] for ch in data[i+1:i+seq_length+1]])
-
-				inputs_one_hot = np.zeros((inputs.shape[0],self.vocab_size),dtype=np.float32)
-				inputs_one_hot[np.arange(inputs.shape[0]),inputs] = 1
-
-				targets_one_hot = np.zeros((targets.shape[0],self.vocab_size),dtype=np.float32)
-				targets_one_hot[np.arange(targets.shape[0]),targets] = 1
-
-
-				feed = {inputs_placeholder:inputs_one_hot, 
-						labels_placeholder:targets_one_hot, 
-						h_prev_placeholder:self.h_state_prev, 
-						c_prev_placeholder:self.c_state_prev}
-
-				# Compute hidden states
-
-				_,loss_output = sess.run([optimize, loss],feed_dict=feed)
-				h_steps,c_steps= sess.run(hidden_unstack,feed_dict=feed)
-
-				# set new hidden states
-				self.h_state_prev = h_steps[-1]
-				self.c_state_prev = c_steps[-1]
-
-				i += seq_length
-				j += 1
-				print(j, end="\r", flush=True)
-
-
-			train_writer.close()
-
-
-	def lstm_cell(self,state,x,train=True):
-
-		# This cell takes in previous hidden states of size (2,num_layers,vocab_size,1) and input of size (vocab_size)
-		with tf.variable_scope("weights",reuse=tf.AUTO_REUSE):
-			W_input = tf.get_variable(name="W_input",shape=[4, self.hidden_size, self.vocab_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
-			U_input = tf.get_variable(name = "U_input",shape=[4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
-			b_input = tf.get_variable(name="b_input", shape=[4, self.hidden_size,1], initializer=tf.zeros_initializer())
-
-			W = tf.get_variable(name="W",shape=[self.num_layers, 4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
-			U = tf.get_variable(name = "U",shape=[self.num_layers, 4, self.hidden_size, self.hidden_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
-			b = tf.get_variable(name="b", shape=[self.num_layers, 4, self.hidden_size,1], initializer=tf.zeros_initializer())
-
-		with tf.name_scope("LSTM_cell"):
-
-			x = tf.reshape(x,[self.vocab_size,1])
-			h_prev,c_prev = tf.unstack(state)
-			inp = tf.layers.dropout(x,rate=0.5,training=train)
-
-			h_full, c_full = [], []
-
-			# First cell
-			with tf.name_scope("input_gates"):
-				with tf.name_scope("ft"):
-					ft = tf.sigmoid(tf.matmul(W_input[0],inp) + tf.matmul(U_input[0],h_prev[0]) + b_input[0])
-				with tf.name_scope("it"):
-					it = tf.sigmoid(tf.matmul(W_input[1],inp) + tf.matmul(U_input[1],h_prev[0]) + b_input[1])
-				with tf.name_scope("ot"):
-					ot = tf.sigmoid(tf.matmul(W_input[2],inp) + tf.matmul(U_input[2],h_prev[0]) + b_input[2])
-				with tf.name_scope("ct"):
-					ct = tf.tanh(tf.matmul(W_input[3],inp) + tf.matmul(U_input[3],h_prev[0]) + b_input[3])
-
-			with tf.name_scope("c"):
-				c = (ft * c_prev[0]) + (it * ct)
-			with tf.name_scope("h"):
-				h = ot * tf.tanh(c)
-
-			h_full.append(h)
-			c_full.append(c)
-
-
-			for i in range(1,self.num_layers):
-
-				inp = tf.layers.dropout(h,rate=0.5,training=train)
-
-				with tf.name_scope("gates"):
-					with tf.name_scope("ft"):
-						ft = tf.sigmoid(tf.matmul(W[i][0],inp) + tf.matmul(U[i][0],h_prev[i]) + b[i][0])
-					with tf.name_scope("it"):
-						it = tf.sigmoid(tf.matmul(W[i][1],inp) + tf.matmul(U[i][1],h_prev[i]) + b[i][1])
-					with tf.name_scope("ot"):
-						ot = tf.sigmoid(tf.matmul(W[i][2],inp) + tf.matmul(U[i][2],h_prev[i]) + b[i][2])
-					with tf.name_scope("ct"):
-						ct = tf.tanh(tf.matmul(W[i][3],inp) + tf.matmul(U[i][3],h_prev[i]) + b[i][3])
-
-				with tf.name_scope("c"):
-					c = (ft * c_prev[i]) + (it * ct)
-				with tf.name_scope("h"):
-					h = ot * tf.tanh(c)
-
-				h_full.append(h)
-				c_full.append(c)
-
-			return tf.stack([h_full,c_full])
 

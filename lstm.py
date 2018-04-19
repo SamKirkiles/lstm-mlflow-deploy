@@ -136,7 +136,8 @@ class LSTM:
 				else:
 					sess.run(tf.global_variables_initializer())
 
-				for i in range(iterations):
+				i = 0
+				while True:
 					# Get our batch of random samples 
 					# Now let's encode this in an embedding 
 					x_sample, y_sample = train_step.__next__()
@@ -151,6 +152,10 @@ class LSTM:
 
 					if (i%100 == 0):
 						print("Loss: " + str(loss))
+					if (i%1000 == 0):
+						print("Saving model....")
+						save_path = saver.save(sess, "./saves/model.ckpt")
+					i += 1
 
 			except KeyboardInterrupt:
 				print("Interrupted... Saving model.")

@@ -123,7 +123,7 @@ class LSTM:
 		__graph__()
 		print("Done.")
 
-	def train(self,train_step,epochs=100,restore=False):
+	def train(self,train_step,iterations=2000,restore=False):
 		# Called to train model
 		with tf.device(self.light_device):
 			saver = tf.train.Saver()
@@ -136,7 +136,7 @@ class LSTM:
 				else:
 					sess.run(tf.global_variables_initializer())
 
-				for i in range(epochs):
+				for i in range(iterations):
 					# Get our batch of random samples 
 					# Now let's encode this in an embedding 
 					x_sample, y_sample = train_step.__next__()

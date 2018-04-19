@@ -118,13 +118,18 @@ class LSTM:
 		__graph__()
 		print("Done.")
 
-	def train(self,train_step,epochs=100):
+	def train(self,train_step,epochs=100,restore=False):
 		# Called to train model
 		
-		try:
-			with tf.Session() as sess:
+		saver = tf.train.Saver()
 
-				sess.run(tf.global_variables_initializer())
+		with tf.Session() as sess:
+			try:
+
+				if restore:
+	  				saver.restore(sess, tf.train.latest_checkpoint('./saves'))
+				else:
+					sess.run(tf.global_variables_initializer())
 
 				for i in range(epochs):
 					# Get our batch of random samples 
@@ -140,12 +145,12 @@ class LSTM:
 					_,loss = sess.run([self.optimize,self.loss],feed_dict=feed)
 
 					print(loss)
-		except KeyboardInterrupt:
-			print("Interrupted... Saving model.")
+			except KeyboardInterrupt:
+				print("Interrupted... Saving model.")
 
+			save_path = saver.save(sess, "./saves/model.ckpt")
 
-
-	def generate(self,char2ix,ix2char,seq_length):
+	def generate(self,char2ix,ix2char,seq_length,restore=False):
 		# Called to generate samples from trained model
 
 		# create seed 
@@ -154,10 +159,15 @@ class LSTM:
 
 		out = ""
 
+		saver = tf.train.Saver()
+		
 		with tf.Session() as sess:
 
 			# init session
-			sess.run(tf.global_variables_initializer())
+			if restore:
+  				saver.restore(sess, tf.train.latest_checkpoint('./saves'))
+			else:
+				sess.run(tf.global_variables_initializer())
 
 			initialize = False
 

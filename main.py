@@ -12,7 +12,8 @@ restore = False
 def main():
 	run_id = np.random.randint(1000)
 
-	X, Y, char2ix, ix2char = data.read_data("warandpeace.txt",sequence_length=20)
+	
+	X, Y, char2ix, ix2char = data.read_data("warandpeace.txt",sequence_length=100)
 	# Generator to get random samples
 	train_set = data.train_set(X,Y,128)
 
@@ -20,9 +21,9 @@ def main():
 
 
 	if test == False:
-		solver.train(train_set)
+		solver.train(train_set,restore=restore)
 	else:
-		print(solver.generate(char2ix,ix2char,1000))
+		print(solver.generate(char2ix,ix2char,1000,restore=restore))
 
 if __name__ == "__main__":
 	for o in sys.argv[1:]:

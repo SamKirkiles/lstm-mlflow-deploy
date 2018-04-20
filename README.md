@@ -19,7 +19,8 @@ Here are some examples of text halucinations:
 >the ball, calmls happened to you, does he cavered in the steps to maken, narged the wortured loud. The doctor and from his ??
 >fatare and ran now a run
 >into the existence of the great some! They were saying, he felt a drunk as
->you weight he saw in its away you on leaving a reflection”arch, and all they had till the army and are no waiting those >people was heart free terringly with
+>you weight he saw in its away you on leaving a reflection”arch, and all they had till the army and are no waiting those 
+>people was heart free terringly with
 >somewhere.
 >
 >“To pass? Dudly—retelies to them said for his place of Austria consulting
@@ -29,7 +30,8 @@ Here are some examples of text halucinations:
 >
 >Without will be a the people she told not your house, looking began unterestby plump ask.
 >
->The old fair that that it he has escort of our dresses ready, but his dwant to you wagrag immediately if bridge and rouding >to kiss a whit of relay of, he must do so, is not imaginex regard
+>The old fair that that it he has escort of our dresses ready, but his dwant to you wagrag immediately if bridge and rouding 
+>to kiss a whit of relay of, he must do so, is not imaginex regard
 >to really singers,
 >and exembrowed smiles, stapid vicious own ind-Ardisoners, quition, and I have letter she
 >rose and

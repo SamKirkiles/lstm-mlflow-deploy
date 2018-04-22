@@ -6,6 +6,8 @@ I trained a multi-layer cahracter level LSTM with the following cell archictectu
 
 The network has three stacked layers of cells with a batch sequence length size of 100. I trained on an single NVIDIA GeForce 1080.
 
+Download pre-trained model here: https://www.dropbox.com/s/o0glxwlbwtesdck/saves.zip?dl=0
+
 Random weights:
 
 >U—CN3gLBddDWÁu!HÁ”;ap/8!ôdPEç’hÁóblOxD/ç)Vsn@i)Á”YáPxwDöAhDœ “uwDóJ$—u)cDèBDü->èAàZ@zàB(ióH$äaFu3ýYmFniRLMÉKmYwBwZO@Uuaîq@AG()%aèLî$5b%üpïER=—‘À*mê?ç:V

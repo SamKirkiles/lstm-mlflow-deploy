@@ -1,5 +1,7 @@
 # Character Level LSTM - Tensorflow
 
+This repository contains an Mlflow deployment of a character-level LSTM. Since the LSTM executes custom logic when evaluating queries, it is represented as an `mlflow.pyfunc` model.
+
 I trained a multi-layer cahracter level LSTM with the following cell archictecture.
 
 ![LSTM](https://i.imgur.com/gxBbaX2.png)

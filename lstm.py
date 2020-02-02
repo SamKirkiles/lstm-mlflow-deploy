@@ -2,10 +2,11 @@ import tensorflow as tf
 import numpy as np
 import os 
 import pickle
+import mlflow
 
 class LSTM:
 
-	def __init__(self,num_classes,state_size=512,layers=2,heavy_device=None,light_device=None):
+	def __init__(self,num_classes,state_size=512,layers=2,heavy_device=None,light_device=None, restore=True):
 		# Initializes the lstm and builds the graph when run
 
 		self.state_size = state_size
@@ -119,50 +120,53 @@ class LSTM:
 			self.optimize = optimize
 			self.last_state = last_state
 
+			with tf.device(self.light_device):
+				self.saver = tf.train.Saver()
+
+			# Initialize session
+			self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+			if restore:
+				self.saver.restore(self.sess, tf.train.latest_checkpoint('./saves'))
+			else:
+				self.sess.run(tf.global_variables_initializer())
+
+
 		print("Building Graph")
 		__graph__()
 		print("Done.")
 
 	def train(self,train_step,iterations=2000,restore=False):
 		# Called to train model
-		with tf.device(self.light_device):
-			saver = tf.train.Saver()
 
-		with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-			try:
+		try:
 
-				if restore:
-	  				saver.restore(sess, tf.train.latest_checkpoint('./saves'))
-				else:
-					sess.run(tf.global_variables_initializer())
+			i = 0
+			while True:
+				# Get our batch of random samples 
+				# Now let's encode this in an embedding 
+				x_sample, y_sample = train_step.__next__()
 
-				i = 0
-				while True:
-					# Get our batch of random samples 
-					# Now let's encode this in an embedding 
-					x_sample, y_sample = train_step.__next__()
+				batch_size = x_sample.shape[0]
 
-					batch_size = x_sample.shape[0]
+				feed = {self.x_: x_sample,
+						self.y_: y_sample.flatten(),
+						self.initial_state: np.zeros(shape=(2,self.layers,batch_size,self.state_size),dtype=np.float32)}
 
-					feed = {self.x_: x_sample,
-							self.y_: y_sample.flatten(),
-							self.initial_state: np.zeros(shape=(2,self.layers,batch_size,self.state_size),dtype=np.float32)}
+				_,loss = self.sess.run([self.optimize,self.loss],feed_dict=feed)
 
-					_,loss = sess.run([self.optimize,self.loss],feed_dict=feed)
-
-					if (i%100 == 0):
-						print("Loss: " + str(loss))
-					if (i%1000 == 0):
-						print("Saving model....")
-						save_path = saver.save(sess, "./saves/model.ckpt")
-					i += 1
-					print(i, end="\r", flush=True)
+				if (i%100 == 0):
+					print("Loss: " + str(loss))
+				if (i%1000 == 0):
+					print("Saving model....")
+					save_path = self.saver.save(self.sess, "./model_path/saves/model.ckpt")
+				i += 1
+				print(i, end="\r", flush=True)
 
 
-			except KeyboardInterrupt:
-				print("Interrupted... Saving model.")
+		except KeyboardInterrupt:
+			print("Interrupted... Saving model.")
 
-			save_path = saver.save(sess, "./saves/model.ckpt")
+		save_path = self.saver.save(self.sess, "./model_path/saves/model.ckpt")
 
 	def generate(self,char2ix,ix2char,seq_length,restore=False):
 		# Called to generate samples from trained model
@@ -173,45 +177,33 @@ class LSTM:
 
 		out = ""
 
-		with tf.device(self.light_device):
+		initialize = False
 
-			saver = tf.train.Saver()
+		for i in range(seq_length):
 
-		with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-
-			# init session
-			if restore:
-  				saver.restore(sess, tf.train.latest_checkpoint('./saves'))
-			else:
-				sess.run(tf.global_variables_initializer())
-
-			initialize = False
-
-			for i in range(seq_length):
-
-				if initialize == False:
-					# if it is the first letter in sequence, intialize with default hidden states
-					feed = {
-						self.x_: np.array([seed]).reshape(1,1),
-						self.initial_state: np.zeros(shape=(2,self.layers,1,self.state_size),dtype=np.float32)
-					}
-				else:				
-					# otherwise, we need to intialize previous hidden state with the returned last state	
-					feed = {
-						self.x_: np.array([seed]).reshape(1,1),
-						self.initial_state: last_state
-					}
+			if initialize == False:
+				# if it is the first letter in sequence, intialize with default hidden states
+				feed = {
+					self.x_: np.array([seed]).reshape(1,1),
+					self.initial_state: np.zeros(shape=(2,self.layers,1,self.state_size),dtype=np.float32)
+				}
+			else:				
+				# otherwise, we need to intialize previous hidden state with the returned last state	
+				feed = {
+					self.x_: np.array([seed]).reshape(1,1),
+					self.initial_state: last_state
+				}
 
 
-				predictions,last_state = sess.run([self.predictions,self.last_state],feed_dict = feed)
+			predictions,last_state = self.sess.run([self.predictions,self.last_state],feed_dict = feed)
 
-				initialize = True
+			initialize = True
 
-				seed = np.random.choice(range(len(ix2char)),p=np.ravel(predictions))
+			seed = np.random.choice(range(len(ix2char)),p=np.ravel(predictions))
 
-				out += ix2char[seed]
+			out += ix2char[seed]
 
-			return out
+		return out
 
 
 

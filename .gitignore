@@ -4,7 +4,10 @@ __pycache__/
 *$py.class
 
 cifar_loader/data/CIFAR-10/
-
+saves/
+model_path/
+mlruns/
+saved_model
 # C extensions
 *.so
 

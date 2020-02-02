@@ -22,7 +22,6 @@ def main():
 	if restore:
 		with open('./saves/state.pkl', 'rb') as f:
 			X, Y, char2ix, ix2char = pickle.load(f)
-
 	else:
 		X, Y, char2ix, ix2char = data.read_data("warandpeace.txt", sequence_length=100)
 

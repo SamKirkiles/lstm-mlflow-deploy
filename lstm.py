@@ -168,14 +168,12 @@ class LSTM:
 
 		save_path = self.saver.save(self.sess, "./model_path/saves/model.ckpt")
 
-	def generate(self,char2ix,ix2char,seq_length,restore=False):
+	def generate(self,char2ix,ix2char,seq_length,input_seed='a'):
 		# Called to generate samples from trained model
 
-		# create seed 
-
-		seed = np.random.choice(list(char2ix.values()))
-
-		out = ""
+		#seed = np.random.choice(list(char2ix.values()))
+		seed = char2ix[input_seed]
+		out = input_seed
 
 		initialize = False
 

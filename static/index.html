@@ -1,0 +1,112 @@
+<!DOCTYPE=html>
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="scripts/index.js"></script>
+    <link rel="stylesheet" href="styles/index.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <div class="container">
+        <div class="row" id="header">
+            <div class="col-lg-12">
+                <h2>Character-Based LSTM Deployed with MLflow</h2>
+                <p>Built by Sam Kirkiles</p>
+                <a href="https://github.com/SamKirkiles/lstm-mlflow-deploy">Source Code</a>
+            </div>
+        </div>
+        <div class="row" id="mlflowexplanation">
+            <div class="hidden-xs hidden-sm col-lg-2"></div>
+            <div class="col-lg-8"> 
+                I trained a multi-layer character-level LSTM on War and Peace.The network has three stacked layers of cells with a batch sequence length size of 100. I trained on a single NVIDIA GeForce 1080. The model has been deployed as a pyfunc model on MLflow.
+            </div>
+            <div class="hidden-xs hidden-sm col-lg-2"></div>
+        </div>
+        <div class="row" id="buttoncharactercount">
+            <div class="col-lg-12" id="charRow">
+                <div class="input-group col-lg-4 col-lg-offset-4" id="generateForm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Characters</span>
+                    </div>
+                    <input type="number" class="form-control" id="characterCount" value=100 min=1>
+                    <div class="input-group-append input-group-prepend">
+                        <span class="input-group-text">Seed</span>
+                    </div>
+                    <input type="character" class="form-control" value="a" id="seedValue" maxlength=1 pattern="[a-z]">
+                </div>
+            </div>
+        </div>
+        <div class="row" id="buttonrow">
+            <div class="col-lg-5"></div>
+            <div class="col-lg-2">
+                <div class="input-group-append center-block">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Generate</button>
+                    <div class="dropdown-menu" role="menu">
+                        <a class="dropdown-item" href="javascript:generate(1);">War and Peace</a>
+                    </div>
+                </div>
+            </div> 
+            <div class="col-lg-5"></div>
+        </div>
+        <div class="row" id="texthallucination">
+            <div class="col-lg-2 hidden-sm hidden-xs"></div>
+            <div class="col-lg-8">
+                <label for="textHallucinationArea"><b>Text Hallucination</b></label>
+                <textarea class="form-control" id="textHallucinationArea" rows="3" placeholder="Click 'Generate' to view the LSTM's prediction for the given seed / character count combination!"readonly></textarea>
+            </div>
+            <div class="col-lg-2 hidden-sm hidden-xs"></div>
+        </div>
+        <div class="row" id="logorow">
+            <div class="col-lg-4"></div>
+            <div class="col-lg-2">
+                <img src="media/mlflow.png" class="logo" alt="Training">
+            </div>
+            <div class="col-lg-2">
+                <img src="media/tflow.png" class="logo" alt="Training">
+            </div>
+            <div class="col-lg-4"></div>
+        </div>
+        <div class="row" id="readme_contents_row">
+            <div class="col-lg-2 hidden-sm hidden-xs"></div>
+            <div class="col-lg-8" id="readme_contents">
+                <h3 id="character-level-lstm-tensorflow">Character Level LSTM - Tensorflow</h3>
+                <p>I trained a multi-layered character level LSTM with the following cell architecture.</p>
+                <img class="img-responsive" src="media/lstm.png" id="lstmimage"  alt="LSTM">
+                <p>The network has three stacked layers of cells with a batch sequence length size of 100. I trained on a single NVIDIA GeForce 1080. You can download the pre-trained model <a href="https://www.dropbox.com/s/o0glxwlbwtesdck/saves.zip?dl=0">here</a>.</p>
+                <p>Performance with random weights before training:</p>
+                <blockquote>
+                U—CN3gLBddDWÁu!HÁ”;ap/8!ôdPEç’hÁóblOxD/ç)Vsn@i)Á”YáPx
+                    wDöAhDœ “uwDóJ$—u)cDèBDü-&gt;èAàZ@zàB(ióH$äaFu3ýYm
+                    FniRLMÉKmYwBwZO@Uuaîq @AG()%aèLî$5b%üpïER=—‘À*mê?ç:VB’BlcFI 
+                    y5hf98JouV﻿jAúoöt(y(WWnRE; él:xGlêEWÀnoG
+            </blockquote>
+                <p>Examples of text hallucinations after training:</p>
+                <blockquote>
+                    <i>
+                <p>the ball, calmls happened to you, does he cavered in the steps to maken, narged the wortured loud. The doctor and from his ??
+                fatare and ran now a run
+                into the existence of the great some! They were saying, he felt a drunk as
+                you weight he saw in its away you on leaving a reflection”arch, and all they had till the army and are no waiting those 
+                people was heart free terringly with
+                somewhere.</p>
+                <p>“To pass? Dudly—retelies to them said for his place of Austria consulting
+                impossible, more still told his corrigencial it had way out of honors
+                could not been glanced lea into the comrades
+                merely to a relate.</p>
+                <p>Without will be a the people she told not your house, looking began unterestby plump ask.</p>
+                The old fair that that it he has escort of our dresses ready, but his dwant to you wagrag immediately if bridge and rouding 
+                to kiss a whit of relay of, he must do so, is not imaginex regard
+                to really singers,
+                and exembrowed smiles, stapid vicious own ind-Ardisoners, quition, and I have letter she
+                rose and
+                    </i>
+                </blockquote>
+                <p><img src="media/term.png" id="trainingpic" alt="Training"></p>
+            </div>
+        <div class="col-lg-2 hidden-sm hidden-xs"></div>
+    </div>
+    <hr>
+    <br>
+</body>

@@ -1,0 +1,110 @@
+html {
+    height: 100vh;
+}
+body {
+    height: 90%;
+    margin: 30px;
+    font-family: "Arial";
+    text-align: center;
+}
+
+.container {
+    height: 100%;
+    width: 100%;
+}
+
+.padding1 {
+    height: 20%;
+}
+
+.padding2 {
+    height: 10%;
+}
+
+#generateForm {
+    margin: auto;
+}
+
+#seedValue {
+    padding-right: 5px;
+    max-width: 35px;
+}
+
+#characterLabel {
+    font-size: 15px;
+    line-height: 40px;
+    margin-right: 10px;
+}
+
+.form-control-inline {
+    min-width: 0;
+    width: auto;
+    display: inline;
+}
+
+#header {
+    margin-bottom: 12px;
+}
+
+#lstmimage {
+    width: 100%;
+}
+
+#mlflowexplanation {
+    margin-top: 10px;
+    margin-bottom: 16px;
+}
+
+#texthallucination {
+    height: 400px;
+}
+
+#buttoncharactercount {
+    margin-bottom: 15px;
+}
+
+#buttonrow {
+    margin-bottom: 10px;
+}
+
+.center-block {
+    display: table;  /* Instead of display:block */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#textHallucinationArea {
+    height: 85%;
+    padding: 15px;
+}
+
+#trainingpic {
+    width: 100%;
+}
+
+#logorow {
+    padding-bottom: 30px;
+}
+
+.logo {
+    height: 100px;
+}
+
+blockquote {
+    border-radius: 3px;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem 1.2rem;
+    color: #4a4a4a;
+    margin: 1rem auto;
+    background: #E8E8E8;
+}
+blockquote:before{
+    margin-right: 13px;
+    right: 100%;
+}
+blockquote:after{
+    margin-left: 13px;
+    left: 100%;  
+    top: auto;
+}

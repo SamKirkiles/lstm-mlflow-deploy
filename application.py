@@ -3,8 +3,6 @@ import cloudpickle
 import tensorflow as tf
 import mlflow.pyfunc
 import pandas as pd
-import pythonmodel
-
 
 application = Flask(__name__,static_url_path="",static_folder="static")
 

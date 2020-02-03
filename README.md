@@ -1,9 +1,22 @@
-# Character Level LSTM - Tensorflow
+# Character Level LSTM - Tensorflow/MLflow
 
-This repository contains an Mlflow deployment of a character-level LSTM. Since the LSTM executes custom logic when evaluating queries, it is represented as an `mlflow.pyfunc` model.
+**Temporary Url:** http://ec2-3-94-194-50.compute-1.amazonaws.com/
 
-I trained a multi-layer cahracter level LSTM with the following cell archictecture.
+This repository contains an Mlflow deployment of my character-level LSTM. Since the LSTM executes custom logic when evaluating queries, it is represented as an `mlflow.pyfunc` model.
+<p align="center">
+<img src="https://i.imgur.com/5tCB71T.png" width="50%"/>
+</p>
 
+
+### Installation
+1. Clone repo locally
+2. Install dependencies with `pip3 install -r requirements.txt`
+3. Train model from scratch or download saves from the link below into the saves folder
+3. Run `python3 create_model_wrapper.py` to create pyfunc model in `/model_path`
+4. Run `python3 application.py` to start the flask server
+
+### Architecture
+I trained a standard multi-layer cahracter level LSTM with the following cell archictecture. This project was heavily inspired by Andrej Karpathy's blog post http://karpathy.github.io/2015/05/21/rnn-effectiveness/
 ![LSTM](https://i.imgur.com/gxBbaX2.png)
 
 The network has three stacked layers of cells with a batch sequence length size of 100. I trained on an single NVIDIA GeForce 1080.
@@ -15,8 +28,6 @@ Random weights:
 >U—CN3gLBddDWÁu!HÁ”;ap/8!ôdPEç’hÁóblOxD/ç)Vsn@i)Á”YáPxwDöAhDœ “uwDóJ$—u)cDèBDü->èAàZ@zàB(ióH$äaFu3ýYmFniRLMÉKmYwBwZO@Uuaîq@AG()%aèLî$5b%üpïER=—‘À*mê?ç:V
 >v
 >B’BlcFIy5hf98JouV﻿ jAúoöt(y(WWnRE;él:xGlêEWÀnoG
-
-
 
 Here are some examples of text halucinations:
 

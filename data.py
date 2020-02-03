@@ -2,7 +2,7 @@
 import numpy as np
 import random
 
-def read_data(filename,sequence_length):
+def read_data(filename, sequence_length):
 	# Read in data from text file
 	data = open(filename,'r',encoding='utf-8').read()
 
@@ -25,7 +25,7 @@ def read_data(filename,sequence_length):
 
 	return X, Y, char2ix, ix2char
 
-def train_set(X,Y,batch_size):
+def train_set(X, Y, batch_size):
 	while True:
-		sample = random.sample(list(np.arange(len(X))),batch_size)
+		sample = random.sample(list(np.arange(len(X))), batch_size)
 		yield X[sample], Y[sample]

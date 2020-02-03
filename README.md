@@ -1,11 +1,12 @@
 # Character Level LSTM - Tensorflow
 
-This repository contains an Mlflow deployment of a character-level LSTM. Since the LSTM executes custom logic when evaluating queries, it is represented as an `mlflow.pyfunc` model.
+This repository contains an Mlflow deployment of my character-level LSTM. Since the LSTM executes custom logic when evaluating queries, it is represented as an `mlflow.pyfunc` model.
+
+<p align="center">
+<img src="https://i.imgur.com/5tCB71T.png" width="50%"/>
+</p>
 
 I trained a multi-layer cahracter level LSTM with the following cell archictecture.
-
-
-![Webapge](https://i.imgur.com/5tCB71T.png)
 ![LSTM](https://i.imgur.com/gxBbaX2.png)
 
 The network has three stacked layers of cells with a batch sequence length size of 100. I trained on an single NVIDIA GeForce 1080.
@@ -17,8 +18,6 @@ Random weights:
 >U—CN3gLBddDWÁu!HÁ”;ap/8!ôdPEç’hÁóblOxD/ç)Vsn@i)Á”YáPxwDöAhDœ “uwDóJ$—u)cDèBDü->èAàZ@zàB(ióH$äaFu3ýYmFniRLMÉKmYwBwZO@Uuaîq@AG()%aèLî$5b%üpïER=—‘À*mê?ç:V
 >v
 >B’BlcFIy5hf98JouV﻿ jAúoöt(y(WWnRE;él:xGlêEWÀnoG
-
-
 
 Here are some examples of text halucinations:
 

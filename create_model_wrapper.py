@@ -1,5 +1,5 @@
 import cloudpickle
-import pythonmodel
+import lstm_pyfunc_model
 import tensorflow as tf
 import mlflow.pyfunc 
 import pandas as pd
@@ -19,7 +19,7 @@ conda_env = {
 mlflow_pyfunc_model_path = "./model_path"
 mlflow.pyfunc.save_model(
     path=mlflow_pyfunc_model_path,
-    python_model=pythonmodel.LstmModel(),
+    python_model=lstm_pyfunc_model.LstmModel(),
     artifacts=artifacts,
     conda_env=conda_env,
 )

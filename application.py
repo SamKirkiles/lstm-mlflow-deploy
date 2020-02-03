@@ -13,7 +13,6 @@ loaded_model = None
 def root():
 	return application.send_static_file('index.html')
 
-
 @application.route('/predict', methods=["POST"])
 def predict():
 

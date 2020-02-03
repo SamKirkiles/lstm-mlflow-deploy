@@ -4,6 +4,8 @@ This repository contains an Mlflow deployment of a character-level LSTM. Since t
 
 I trained a multi-layer cahracter level LSTM with the following cell archictecture.
 
+
+![Webapge](https://i.imgur.com/5tCB71T.png)
 ![LSTM](https://i.imgur.com/gxBbaX2.png)
 
 The network has three stacked layers of cells with a batch sequence length size of 100. I trained on an single NVIDIA GeForce 1080.

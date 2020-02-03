@@ -14,7 +14,7 @@ This repository contains an Mlflow deployment of my character-level LSTM. Since 
 4. Run `python3 application.py` to start the flask server
 
 ### Architecture
-I trained a standard multi-layer cahracter level LSTM with the following cell archictecture. Architecture was heavily inspired by Andrej Karpathy's blog post http://karpathy.github.io/2015/05/21/rnn-effectiveness/
+I trained a standard multi-layer cahracter level LSTM with the following cell archictecture. This project was heavily inspired by Andrej Karpathy's blog post http://karpathy.github.io/2015/05/21/rnn-effectiveness/
 ![LSTM](https://i.imgur.com/gxBbaX2.png)
 
 The network has three stacked layers of cells with a batch sequence length size of 100. I trained on an single NVIDIA GeForce 1080.

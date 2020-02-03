@@ -1,5 +1,7 @@
 # Character Level LSTM - Tensorflow/MLflow
 
+**Temporary Url:** http://ec2-3-94-194-50.compute-1.amazonaws.com/
+
 This repository contains an Mlflow deployment of my character-level LSTM. Since the LSTM executes custom logic when evaluating queries, it is represented as an `mlflow.pyfunc` model.
 <p align="center">
 <img src="https://i.imgur.com/5tCB71T.png" width="50%"/>

@@ -6,8 +6,17 @@ import mlflow
 
 class LSTM:
 
-	def __init__(self,num_classes,state_size=512,layers=2,heavy_device=None,light_device=None, restore=True):
-		# Initializes the lstm and builds the graph when run
+	def __init__(
+		self, 
+		num_classes,
+		state_size=512,
+		layers=2,
+		heavy_device=None,
+		light_device=None, 
+		restore=True
+	):
+		
+		s# Initializes the lstm and builds the graph when run
 
 		self.state_size = state_size
 		self.layers = layers
@@ -29,8 +38,8 @@ class LSTM:
 					# Using embeddings we can reshape our number of features into the size of our desired hidden shape
 
 					# Get weights or initialize if not already in graph
-					W = tf.get_variable(name="W",shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=0.08,maxval=0.08))
-					U = tf.get_variable(name = "U",shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
+					W = tf.get_variable(name="W", shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=0.08, maxval=0.08))
+					U = tf.get_variable(name = "U", shape=[self.layers, 4, self.state_size, self.state_size],initializer=tf.random_uniform_initializer(minval=-0.08, maxval=0.08))
 					b = tf.get_variable(name="b", shape=[self.layers, 4, self.state_size], initializer=tf.zeros_initializer())
 
 					h_prev,c_prev = tf.unstack(prev)
@@ -65,22 +74,22 @@ class LSTM:
 			with tf.device(self.heavy_device):
 
 				# This will end up being shape [batch_size,state_size] currently it is [batch_size, seq_length]
-				x_ = tf.placeholder(shape=[None,None],dtype=tf.int64,name="x_")
-				y_ = tf.placeholder(shape=[None],dtype=tf.int64,name="y_")
-				initial_state = tf.placeholder(shape=[2,self.layers,None,self.state_size],dtype=tf.float32,name='initial_state')
-				
+				x_ = tf.placeholder(shape=[None,None], dtype=tf.int64, name="x_")
+				y_ = tf.placeholder(shape=[None], dtype=tf.int64, name="y_")
+				initial_state = tf.placeholder(shape=[2, self.layers,None, self.state_size], dtype=tf.float32, name='initial_state')
+				 
 				# Create embedding. This will be a trainable parameter.
 				embedding = tf.get_variable("embedding",shape=[self.num_classes,self.state_size])
 				# This will create a tensor size of [batch_size, seq_length, state_size] which we can feed into our graph
 				inputs = tf.nn.embedding_lookup(embedding,x_)
 
 				# We need to reshape inputs to have seq_length as its first dimension so tf.scan can run over it giving us [batch_size,state_size] at each time step
-				inputs = tf.transpose(inputs,[1,0,2])
+				inputs = tf.transpose(inputs, [1,0,2])
 
 				# Now we can pass inputs into tf.scan
 				# This will give us an output size of [seq_length, 2, num_layers, batch_size, state_size] 
 
-				outputs = tf.scan(step,inputs,initial_state)
+				outputs = tf.scan(step, inputs, initial_state)
 
 
 				# TODO: Expose this later
@@ -89,14 +98,14 @@ class LSTM:
 				# We only want the hidden state on the last layer
 				# This should be of size batch_size, seq_length, state_size
 				# if we reshape the first two dimensions we can do a matrix multiply with our new weights to compute logits
-				states = tf.transpose(outputs,[1,2,3,0,4])[0][-1]
+				states = tf.transpose(outputs, [1,2,3,0,4])[0][-1]
 
 				# Now we create our final hidden layer weights
 				# Our Y value will in theory be size of [batch_size, seq_length * num_classes] except we will reshape this into a column vector 
 				# and it will not be onehot because sparse softmax will handle this
 				
-				W_f = tf.get_variable(name="W_f",shape=[self.state_size,self.num_classes],initializer=tf.random_uniform_initializer(minval=-0.08,maxval=0.08))
-				b_f = tf.get_variable(name="b_f",shape=[self.num_classes],initializer=tf.zeros_initializer())
+				W_f = tf.get_variable(name="W_f", shape=[self.state_size, self.num_classes], initializer=tf.random_uniform_initializer(minval=-0.08, maxval=0.08))
+				b_f = tf.get_variable(name="b_f", shape=[self.num_classes], initializer=tf.zeros_initializer())
 
 				# reshape to size [batch_size * seq_length, state_size]
 				logits = tf.matmul(tf.reshape(states,[-1,self.state_size]),W_f) + b_f
@@ -135,11 +144,10 @@ class LSTM:
 		__graph__()
 		print("Done.")
 
-	def train(self,train_step,iterations=2000,restore=False):
+	def train(self, train_step, iterations=2000, restore=False):
 		# Called to train model
 
 		try:
-
 			i = 0
 			while True:
 				# Get our batch of random samples 
@@ -150,9 +158,9 @@ class LSTM:
 
 				feed = {self.x_: x_sample,
 						self.y_: y_sample.flatten(),
-						self.initial_state: np.zeros(shape=(2,self.layers,batch_size,self.state_size),dtype=np.float32)}
+						self.initial_state: np.zeros(shape=(2, self.layers,batch_size, self.state_size), dtype=np.float32)}
 
-				_,loss = self.sess.run([self.optimize,self.loss],feed_dict=feed)
+				_,loss = self.sess.run([self.optimize, self.loss], feed_dict=feed)
 
 				if (i%100 == 0):
 					print("Loss: " + str(loss))
@@ -168,7 +176,7 @@ class LSTM:
 
 		save_path = self.saver.save(self.sess, "./model_path/saves/model.ckpt")
 
-	def generate(self,char2ix,ix2char,seq_length,input_seed='a'):
+	def generate(self, char2ix, ix2char, seq_length, input_seed='a'):
 		# Called to generate samples from trained model
 
 		#seed = np.random.choice(list(char2ix.values()))
@@ -183,21 +191,20 @@ class LSTM:
 				# if it is the first letter in sequence, intialize with default hidden states
 				feed = {
 					self.x_: np.array([seed]).reshape(1,1),
-					self.initial_state: np.zeros(shape=(2,self.layers,1,self.state_size),dtype=np.float32)
+					self.initial_state: np.zeros(shape=(2, self.layers, 1, self.state_size), dtype=np.float32)
 				}
 			else:				
 				# otherwise, we need to intialize previous hidden state with the returned last state	
 				feed = {
-					self.x_: np.array([seed]).reshape(1,1),
+					self.x_: np.array([seed]).reshape(1, 1),
 					self.initial_state: last_state
 				}
 
-
-			predictions,last_state = self.sess.run([self.predictions,self.last_state],feed_dict = feed)
+			predictions,last_state = self.sess.run([self.predictions, self.last_state], feed_dict = feed)
 
 			initialize = True
 
-			seed = np.random.choice(range(len(ix2char)),p=np.ravel(predictions))
+			seed = np.random.choice(range(len(ix2char)), p=np.ravel(predictions))
 
 			out += ix2char[seed]
 

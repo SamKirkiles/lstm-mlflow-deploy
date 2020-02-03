@@ -4,14 +4,16 @@ import tensorflow as tf
 import mlflow.pyfunc
 import pandas as pd
 
-application = Flask(__name__,static_url_path="",static_folder="static")
+application = Flask(__name__, static_url_path="", static_folder="static")
 
 mlflow_pyfunc_model_path = "model_path"
 loaded_model = None
 
+
 @application.route('/', methods=["GET"])
 def root():
 	return application.send_static_file('index.html')
+
 
 @application.route('/predict', methods=["POST"])
 def predict():
@@ -21,7 +23,7 @@ def predict():
 			data_dict = pd.DataFrame.from_dict(request.json)
 			test_predictions = loaded_model.predict(data_dict)
 			return test_predictions
-		except:
+		except Exception as e:
 			return "Bad request"
 
 if __name__ == "__main__":

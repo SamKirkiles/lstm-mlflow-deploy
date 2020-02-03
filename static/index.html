@@ -20,7 +20,7 @@
         <div class="row" id="mlflowexplanation">
             <div class="hidden-xs hidden-sm col-lg-2"></div>
             <div class="col-lg-8"> 
-                I trained a multi-layer character-level LSTM on War and Peace.The network has three stacked layers of cells with a batch sequence length size of 100. I trained on a single NVIDIA GeForce 1080. The model has been deployed as a pyfunc model on MLflow.
+                I trained a multi-layer character-level LSTM to generate realistic looking text from War and Peace. The network has three stacked LSTM cells with a batch sequence length of 100. I then deployed the model with MLflow in the pyfunc format.
             </div>
             <div class="hidden-xs hidden-sm col-lg-2"></div>
         </div>
@@ -30,7 +30,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text">Characters</span>
                     </div>
-                    <input type="number" class="form-control" id="characterCount" value=100 min=1>
+                    <input type="number" class="form-control" id="characterCount" value=500 min=1>
                     <div class="input-group-append input-group-prepend">
                         <span class="input-group-text">Seed</span>
                     </div>
@@ -53,7 +53,7 @@
         <div class="row" id="texthallucination">
             <div class="col-lg-2 hidden-sm hidden-xs"></div>
             <div class="col-lg-8">
-                <label for="textHallucinationArea"><b>Text Hallucination</b></label>
+                <label for="textHallucinationArea"><b>Text Generation</b></label>
                 <textarea class="form-control" id="textHallucinationArea" rows="3" placeholder="Click 'Generate' to view the LSTM's prediction for the given seed / character count combination!"readonly></textarea>
             </div>
             <div class="col-lg-2 hidden-sm hidden-xs"></div>

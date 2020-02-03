@@ -5,7 +5,7 @@ import pandas as pd
 import pickle
 
 
-class LstmModel(mlflow.pyfunc.PythonModel):
+class  (mlflow.pyfunc.PythonModel):
 
 	def load_context(self, context):
 
@@ -23,5 +23,11 @@ class LstmModel(mlflow.pyfunc.PythonModel):
 		)
 
 	def predict(self, context, model_input):
+		
 		dict_input = model_input.to_dict()
-		return self.solver.generate(self.char2ix, self.ix2char, int(dict_input['output_length'][0])	, dict_input['seed'][0])
+		return self.solver.generate(
+			self.char2ix, 
+			self.ix2char, 
+			int(dict_input['output_length'][0]),
+			dict_input['seed'][0],
+		)

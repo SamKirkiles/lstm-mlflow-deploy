@@ -19,7 +19,6 @@ def root():
 @application.route('/predict', methods=["POST"])
 def predict():
 
-	error = ''
 	if request.method == "POST":
 		try:
 			data_dict = pd.DataFrame.from_dict(request.json)
@@ -29,6 +28,6 @@ def predict():
 			return "Bad request"
 
 if __name__ == "__main__":
-	#loaded_model = mlflow.pyfunc.load_model(mlflow_pyfunc_model_path)
+	loaded_model = mlflow.pyfunc.load_model(mlflow_pyfunc_model_path)
 	application.run(debug=True)
 	
